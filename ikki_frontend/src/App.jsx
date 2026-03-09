@@ -14,7 +14,7 @@ const savedUser = () => {
 
 export default function App() {
   const [user,       setUser]       = useState(savedUser);
-  const [nav,        setNav]        = useState("home");
+  const [nav,        setNav]        = useState("home"); // home | login | profile | payment
   const [products,   setProducts]   = useState([]);
   const [myProducts, setMyProducts] = useState([]);
   const [offers,     setOffers]     = useState([]);
@@ -22,20 +22,23 @@ export default function App() {
   const [loading,    setLoading]    = useState(!!savedUser());
 
   const loggedIn = !!user && !!getToken();
+  const guestUser = user || { id: null, name: "Mehmon", phone: "", telegram: "", avatar: null };
 
   // ── On mount: verify token + load data ──────────────────────────
   useEffect(() => {
-    if (!getToken()) { setLoading(false); return; }
+    // Har doim Home uchun mahsulotlarni yuklaymiz (guest ham ko'rsin)
     (async () => {
       try {
-        const me = await authAPI.me();
-        setUser(me);
-        localStorage.setItem("rm_user", JSON.stringify(me));
-        await loadData();
+        if (getToken()) {
+          const me = await authAPI.me();
+          setUser(me);
+          localStorage.setItem("rm_user", JSON.stringify(me));
+        }
       } catch {
         clearAuth();
         setUser(null);
       } finally {
+        await loadData();
         setLoading(false);
       }
     })();
@@ -43,29 +46,40 @@ export default function App() {
 
   const loadData = async () => {
     try {
-      const [prods, my, offs] = await Promise.all([
-        productsAPI.getAll(),
-        productsAPI.getMy(),
-        offersAPI.getReceived(),
-      ]);
+      const prods = await productsAPI.getAll();
       setProducts(prods);
-      setMyProducts(my);
-      setOffers(offs);
+
+      if (getToken()) {
+        const [my, offs] = await Promise.all([
+          productsAPI.getMy(),
+          offersAPI.getReceived(),
+        ]);
+        setMyProducts(my);
+        setOffers(offs);
+      } else {
+        setMyProducts([]);
+        setOffers([]);
+      }
     } catch { /* silent */ }
   };
 
   const handleLogin = async (userData) => {
     setUser(userData);
     await loadData();
+    setNav("home");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearAuth();
     setUser(null);
-    setProducts([]);
     setMyProducts([]);
     setOffers([]);
     setNav("home");
+    // Guest uchun public mahsulotlarni qayta yuklash
+    try {
+      const prods = await productsAPI.getAll();
+      setProducts(prods);
+    } catch { /* silent */ }
   };
 
   const handleAddProduct = async (newProd) => {
@@ -102,7 +116,7 @@ export default function App() {
   }
 
   // ── Login screen ─────────────────────────────────────────────────
-  if (!loggedIn) {
+  if (!loggedIn && nav === "login") {
     return <LoginPage onLogin={handleLogin} />;
   }
 
@@ -171,7 +185,27 @@ export default function App() {
 
   return (
     <div style={{ fontFamily:"'Nunito','Segoe UI',sans-serif", background:C.bg }}>
-      {nav === "profile" && (
+      {!loggedIn && nav === "home" && (
+        <HomePage
+          user={guestUser}
+          products={products}
+          setProducts={setProducts}
+          offers={offers}
+          setOffers={setOffers}
+          onNavChange={setNav}
+          homeAction={homeAction}
+          setHomeAction={setHomeAction}
+          onProductAdded={handleAddProduct}
+          loggedIn={false}
+          onRequireAuth={() => setNav("login")}
+        />
+      )}
+
+      {!loggedIn && nav !== "home" && nav !== "login" && (
+        <LoginPage onLogin={handleLogin} />
+      )}
+
+      {loggedIn && nav === "profile" && (
         <>
           <ProfilePage
             user={user}
@@ -184,14 +218,14 @@ export default function App() {
         </>
       )}
 
-      {nav === "payment" && (
+      {loggedIn && nav === "payment" && (
         <>
           <PaymentPage user={user} />
           <BottomNav />
         </>
       )}
 
-      {(nav === "home" || nav !== "profile" && nav !== "payment") && (
+      {loggedIn && (nav === "home" || (nav !== "profile" && nav !== "payment")) && (
         <HomePage
           user={user}
           products={products}
@@ -202,6 +236,8 @@ export default function App() {
           homeAction={homeAction}
           setHomeAction={setHomeAction}
           onProductAdded={handleAddProduct}
+          loggedIn={true}
+          onRequireAuth={() => setNav("login")}
         />
       )}
     </div>

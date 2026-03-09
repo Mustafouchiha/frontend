@@ -8,8 +8,7 @@ export default defineConfig({
     outDir: "dist",
   },
   server: {
-    port: 5173,
-    strictPort: true,
+    port: parseInt(process.env.PORT) || 5173,
     host: "127.0.0.1",
     allowedHosts: "all",
     proxy: {

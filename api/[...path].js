@@ -1,17 +1,7 @@
 require("dotenv").config();
 
 const app = require("../backend/app");
-const { connect } = require("../backend/db");
 
-module.exports = async (req, res) => {
-  try {
-    await connect();
-    return app(req, res);
-  } catch (err) {
-    console.error("❌ API handler xatosi:", err.message);
-    res.statusCode = 500;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ message: err.message }));
-  }
-};
-
+// DB ga ulanish kerak emas — har bir route o'zi query() orqali lazy ulanadi.
+// send-code, health-check kabi endpointlar DB siz ham ishlaydi.
+module.exports = (req, res) => app(req, res);

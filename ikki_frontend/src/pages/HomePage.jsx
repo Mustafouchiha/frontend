@@ -17,6 +17,8 @@ export default function HomePage({
   homeAction,
   setHomeAction,
   onProductAdded,
+  loggedIn,
+  onRequireAuth,
 }) {
   const [search,     setSearch]     = useState("");
   const [activeCats, setActiveCats] = useState([]); // bo'sh => Barchasi
@@ -48,7 +50,15 @@ export default function HomePage({
   const openLoc    = () => { setTVil(fVil); setTTum(fTum); setShowLoc(true); };
   const applyLoc   = () => { setFVil(tVil); setFTum(tVil?tTum:""); setShowLoc(false); };
   const clearLoc   = () => { setTVil(""); setTTum(""); setFVil(""); setFTum(""); setShowLoc(false); };
-  const openAdd    = () => { setForm(EMPTY_FORM); setStep(1); setShowAdd(true); };
+  const requireAuth = () => {
+    if (onRequireAuth) onRequireAuth();
+    else onNavChange && onNavChange("login");
+  };
+
+  const openAdd    = () => {
+    if (!loggedIn) return requireAuth();
+    setForm(EMPTY_FORM); setStep(1); setShowAdd(true);
+  };
   const closeAdd   = () => { setShowAdd(false); setStep(1); setForm(EMPTY_FORM); };
 
   useEffect(() => {
@@ -83,6 +93,7 @@ export default function HomePage({
   };
 
   const sendOffer = async (product) => {
+    if (!loggedIn) return requireAuth();
     setOfferSending(true);
     try {
       const offer = await offersAPI.send(product.id);
@@ -156,7 +167,7 @@ export default function HomePage({
               <span style={{ fontSize:9, flexShrink:0 }}>▾</span>
             </button>
             {/* 🔔 Xabarnoma qo'ng'irog'i */}
-            <div style={{ position:"relative", cursor:"pointer" }} onClick={() => setShowNotifs(true)}>
+            <div style={{ position:"relative", cursor:"pointer" }} onClick={() => (loggedIn ? setShowNotifs(true) : requireAuth())}>
               <div style={{ width:40, height:40, borderRadius:12,
                             background: unreadCount>0 ? C.primaryLight : C.bg,
                             border:`1.5px solid ${unreadCount>0 ? C.primaryBorder : C.border}`,
@@ -245,7 +256,7 @@ export default function HomePage({
 
       {/* grid */}
       <div style={{ padding:"0 16px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-        {filtered.map(p => <PCard key={p.id} p={p} isOwn={p.ownerId===user.id} onClick={() => setSelected(p)} />)}
+        {filtered.map(p => <PCard key={p.id} p={p} isOwn={loggedIn && p.ownerId===user.id} onClick={() => setSelected(p)} />)}
       </div>
 
       {filtered.length===0 && (
@@ -344,7 +355,7 @@ export default function HomePage({
           ) : (
             <div style={{ display:"flex", gap:9 }}>
               <BtnGhost onClick={() => setSelected(null)}>Yopish</BtnGhost>
-              <BtnPrimary onClick={() => { setShowOffer(selected); }}>📨 Taklif yuborish</BtnPrimary>
+              <BtnPrimary onClick={() => { if (!loggedIn) return requireAuth(); setShowOffer(selected); }}>📨 Taklif yuborish</BtnPrimary>
             </div>
           )}
 
@@ -773,7 +784,7 @@ export default function HomePage({
         </div>
 
         {/* Profil */}
-        <div onClick={() => onNavChange("profile")}
+        <div onClick={() => (loggedIn ? onNavChange("profile") : requireAuth())}
           style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
           <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
                         overflow:"hidden",
@@ -790,7 +801,7 @@ export default function HomePage({
           </div>
           <div style={{ fontSize:9, marginTop:3,
                         color:C.textMuted,
-                        fontWeight:400 }}>Profil</div>
+                        fontWeight:400 }}>{loggedIn ? "Profil" : "Kirish"}</div>
         </div>
       </div>
     </div>
