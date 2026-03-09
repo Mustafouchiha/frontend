@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { BtnPrimary, BtnGhost, Lbl, TInput } from "../components/UI";
+import { BtnPrimary, Lbl, TInput } from "../components/UI";
 import { C } from "../constants";
 import { authAPI, setToken } from "../services/api";
 
-// ─── LOGIN / REGISTER PAGE (Demo: ixtiyoriy 4 xonali kod) ────────
+// ─── LOGIN / REGISTER PAGE ─────────────────────────────────────────
 export default function LoginPage({ onLogin }) {
   const [mode,     setMode]     = useState("login");   // "login" | "register"
   const [phone,    setPhone]    = useState("");
@@ -28,12 +28,11 @@ export default function LoginPage({ onLogin }) {
     try {
       let data;
       if (mode === "login") {
-        data = await authAPI.login({ phone: phone.trim(), code: code.trim() });
+        data = await authAPI.login({ phone: phone.trim() });
       } else {
         data = await authAPI.register({
           name:     name.trim(),
           phone:    phone.trim(),
-          code:     code.trim(),
           telegram: telegram.trim(),
         });
       }
@@ -41,7 +40,6 @@ export default function LoginPage({ onLogin }) {
       localStorage.setItem("rm_user", JSON.stringify(data.user));
       onLogin(data.user);
     } catch (e) {
-      // Login da "topilmadi" xatosi → ro'yxatdan o'tishga yo'naltirish
       if (mode === "login" && e.message?.includes("topilmadi")) {
         setError("Bu raqam topilmadi. \"Ro'yxatdan o'tish\" ni tanlang.");
       } else {
@@ -128,7 +126,7 @@ export default function LoginPage({ onLogin }) {
         )}
 
         {/* Demo kod */}
-        <Lbl>Demo kod *</Lbl>
+        <Lbl>Demo kod * (ixtiyoriy har qanday 4+ raqam)</Lbl>
         <input
           value={code}
           onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -157,7 +155,7 @@ export default function LoginPage({ onLogin }) {
         }}>
           <span style={{ fontSize: 16 }}>🧪</span>
           <span style={{ fontSize: 11, color: C.primaryDark, fontWeight: 600 }}>
-            Demo rejim: ixtiyoriy 4 xonali son kiriting (masalan: 1234)
+            Demo rejim: ixtiyoriy 4+ raqam kiriting (masalan: 1234)
           </span>
         </div>
 
