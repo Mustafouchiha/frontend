@@ -166,21 +166,29 @@ export default function HomePage({
               <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flex:1 }}>{locLabel}</span>
               <span style={{ fontSize:9, flexShrink:0 }}>▾</span>
             </button>
-            {/* 🔔 Xabarnoma qo'ng'irog'i */}
-            <div style={{ position:"relative", cursor:"pointer" }} onClick={() => (loggedIn ? setShowNotifs(true) : requireAuth())}>
-              <div style={{ width:40, height:40, borderRadius:12,
-                            background: unreadCount>0 ? C.primaryLight : C.bg,
-                            border:`1.5px solid ${unreadCount>0 ? C.primaryBorder : C.border}`,
-                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🔔</div>
-              {unreadCount > 0 && (
-                <div style={{ position:"absolute", top:-4, right:-4, width:18, height:18,
-                              background:C.primaryDark, borderRadius:"50%", fontSize:9,
-                              color:"white", fontWeight:800, border:"2px solid white",
-                              display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  {unreadCount}
-                </div>
-              )}
-            </div>
+            {/* 🔔 Xabarnoma qo'ng'irog'i — faqat login bo'lganda */}
+            {loggedIn ? (
+              <div style={{ position:"relative", cursor:"pointer" }} onClick={() => setShowNotifs(true)}>
+                <div style={{ width:40, height:40, borderRadius:12,
+                              background: unreadCount>0 ? C.primaryLight : C.bg,
+                              border:`1.5px solid ${unreadCount>0 ? C.primaryBorder : C.border}`,
+                              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🔔</div>
+                {unreadCount > 0 && (
+                  <div style={{ position:"absolute", top:-4, right:-4, width:18, height:18,
+                                background:C.primaryDark, borderRadius:"50%", fontSize:9,
+                                color:"white", fontWeight:800, border:"2px solid white",
+                                display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    {unreadCount}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ cursor:"pointer" }} onClick={requireAuth}>
+                <div style={{ width:40, height:40, borderRadius:12,
+                              background:C.bg, border:`1.5px solid ${C.border}`,
+                              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🔒</div>
+              </div>
+            )}
           </div>
         </div>
 
