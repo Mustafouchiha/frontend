@@ -41,7 +41,7 @@ export default function PCard({ p, onClick, isOwn }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
           <span style={{ fontSize:9, fontWeight:700, padding:"2px 7px", borderRadius:8,
                          background:cc.bg, color:cc.text }}>● {p.condition}</span>
-          <span style={{ fontSize:9, color:C.textMuted }}>#{p.id}</span>
+          <span style={{ fontSize:9, color:C.textMuted }}>#{p.id.slice(0,10)}...</span>
         </div>
 
         <div style={{ fontSize:13, fontWeight:800, color:C.text, marginBottom:6, lineHeight:1.25 }}>{p.name}</div>

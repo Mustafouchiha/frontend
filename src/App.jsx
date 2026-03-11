@@ -69,13 +69,17 @@ export default function App() {
     setNav("home");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     clearAuth();
     setUser(null);
-    setProducts([]);
     setMyProducts([]);
     setOffers([]);
     setNav("home");
+    // Guest uchun public mahsulotlarni qayta yuklash
+    try {
+      const prods = await productsAPI.getAll();
+      setProducts(prods);
+    } catch { /* silent */ }
   };
 
   const handleAddProduct = async (newProd) => {
