@@ -24,3 +24,6 @@ Thumbs.db
 .idea/
 
 .vercel
+
+# ngrok tunnel URL (avtomatik yaratiladi)
+.ngrok-url

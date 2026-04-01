@@ -4,7 +4,7 @@ import { C } from "../constants";
 import { authAPI, setToken } from "../services/api";
 import Logo from "../components/Logo";
 import {
-  Smartphone, FlaskConical, Loader2,
+  Smartphone, Loader2,
   KeyRound, CheckCircle, AlertTriangle, ArrowLeft, Send,
 } from "lucide-react";
 
@@ -29,64 +29,110 @@ export default function LoginPage({ onLogin }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
 
-  // URL'da ?tgToken= bo'lsa — Telegram bot orqali avtomatik kirish
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const tgToken = params.get("tgToken");
-    if (!tgToken) return;
+    const tgToken  = params.get("tgToken");
+    const tgPhone  = params.get("phone");
+    const tgName   = params.get("name");
+    const tgUser   = params.get("telegram");
+    const tgChatId = params.get("tgChatId");
+    const isReg    = params.get("register") === "1";
 
-    // URL'dan tokenni tozalash (xavfsizlik uchun)
+    // URL'ni tozalash
     window.history.replaceState({}, "", window.location.pathname);
 
-    setLoading(true);
-    setError("");
-    authAPI.loginWithTgToken(tgToken)
-      .then((data) => {
-        setToken(data.token);
-        localStorage.setItem("rm_user", JSON.stringify(data.user));
-        onLogin(data.user);
-      })
-      .catch((e) => {
-        setError(e.message?.includes("yaroqsiz") || e.message?.includes("muddati")
-          ? "Havola eskirgan. Botdan yangi havola oling."
-          : (e.message || "Telegram orqali kirishda xatolik"));
-        setLoading(false);
-      });
+    if (tgToken) {
+      // Mavjud foydalanuvchi — avtomatik kirish
+      setLoading(true);
+      authAPI.loginWithTgToken(tgToken)
+        .then((data) => {
+          setToken(data.token);
+          localStorage.setItem("rm_user", JSON.stringify(data.user));
+          onLogin(data.user);
+        })
+        .catch((e) => {
+          setError(e.message?.includes("yaroqsiz") || e.message?.includes("muddati")
+            ? "Havola eskirgan. Botdan yangi havola oling."
+            : (e.message || "Telegram orqali kirishda xatolik"));
+          setLoading(false);
+        });
+    } else if (isReg && tgPhone) {
+      // Yangi foydalanuvchi — ro'yxatdan o'tish formasi to'ldiriladi
+      const digits = tgPhone.replace(/\D/g, "").slice(-9);
+      setMode("register");
+      setPhone(formatPhone(digits));
+      if (tgName)  setName(tgName);
+      if (tgUser)  setTelegram(tgUser);
+      // tgChatId ni keyingi submit uchun saqlab qo'yamiz
+      if (tgChatId) window.__tgChatId = tgChatId;
+    }
   }, []);
 
   const switchMode = (m) => { setMode(m); setError(""); setCode(""); setStep(1); };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     setError("");
     if (!phone.trim()) { setError("Telefon raqam kiriting"); return; }
     if (mode === "register" && !name.trim()) { setError("Ism familiya kiriting"); return; }
-    setStep(2);
+
+    if (mode === "login") {
+      // Login: Telegram'ga OTP yuborish
+      setLoading(true);
+      try {
+        await authAPI.sendCode(phone.replace(/\s/g, ""));
+        setStep(2);
+      } catch (e) {
+        if (e.message?.includes("needBot") || e.message?.includes("botda")) {
+          setError("Bu raqam botda ro'yxatdan o'tmagan. @Requrilishbot da /start bosing.");
+        } else {
+          setError(e.message || "Xatolik yuz berdi");
+        }
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Register: to'g'ridan-to'g'ri yuborish (bot orqali kelgan)
+      setStep(2);
+    }
   };
 
   const handleSubmit = async () => {
     setError("");
-    if (code.trim().length !== 4) { setError("4 xonali kod kiriting"); return; }
-    setLoading(true);
+    const tgChatId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+      || window.__tgChatId
+      || null;
 
-    // Telegram Mini App orqali kirsa — chat_id olinadi
-    const tgChatId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null;
-
-    try {
-      let data;
-      if (mode === "login") {
-        data = await authAPI.login({ phone: phone.trim(), tgChatId });
-      } else {
-        data = await authAPI.register({ name: name.trim(), phone: phone.trim(), telegram: telegram.trim(), tgChatId });
+    if (mode === "register") {
+      // Ro'yxatdan o'tish — kod talab etilmaydi (bot orqali kelgan)
+      setLoading(true);
+      try {
+        const data = await authAPI.register({
+          name: name.trim(), phone: phone.replace(/\s/g, ""),
+          telegram: telegram.trim(), tgChatId,
+        });
+        setToken(data.token);
+        localStorage.setItem("rm_user", JSON.stringify(data.user));
+        onLogin(data.user);
+      } catch (e) {
+        setError(e.message || "Xatolik yuz berdi");
+      } finally {
+        setLoading(false);
       }
+      return;
+    }
+
+    // Login — OTP tekshirish
+    if (code.trim().length !== 6) { setError("6 xonali kod kiriting"); return; }
+    setLoading(true);
+    try {
+      const data = await authAPI.login({
+        phone: phone.replace(/\s/g, ""), code: code.trim(), tgChatId,
+      });
       setToken(data.token);
       localStorage.setItem("rm_user", JSON.stringify(data.user));
       onLogin(data.user);
     } catch (e) {
-      if (mode === "login" && e.message?.includes("topilmadi")) {
-        setError("Bu raqam topilmadi. \"Ro'yxatdan o'tish\" ni tanlang.");
-      } else {
-        setError(e.message || "Xatolik yuz berdi");
-      }
+      setError(e.message || "Xatolik yuz berdi");
     } finally {
       setLoading(false);
     }
@@ -186,7 +232,7 @@ export default function LoginPage({ onLogin }) {
         </div>
       )}
 
-      {/* Step 2 — SMS kod */}
+      {/* Step 2 — Tasdiqlash */}
       {step === 2 && (
         <div style={{ width:"100%", background:C.card, borderRadius:22,
                       border:`1px solid ${C.border}`, padding:"24px 20px",
@@ -199,60 +245,83 @@ export default function LoginPage({ onLogin }) {
             <ArrowLeft size={14} /> Orqaga
           </button>
 
-          <div style={{ textAlign:"center", marginBottom:24 }}>
-            <div style={{ width:60, height:60, borderRadius:18, margin:"0 auto 14px",
-                          background:C.primaryLight, border:`2px solid ${C.primaryBorder}`,
-                          display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <Smartphone size={28} color={C.primaryDark} />
-            </div>
-            <div style={{ fontSize:18, fontWeight:900, color:C.text, marginBottom:6 }}>SMS kod</div>
-            <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5 }}>Quyidagi raqamga kod yuborildi:</div>
-            <div style={{ display:"inline-block", marginTop:6, background:C.primaryLight,
-                          border:`1px solid ${C.primaryBorder}`, borderRadius:10, padding:"5px 14px",
-                          fontSize:15, fontWeight:900, color:C.primaryDark }}>
-              +998 {phone}
-            </div>
-          </div>
+          {mode === "login" ? (
+            /* LOGIN — Telegram OTP */
+            <>
+              <div style={{ textAlign:"center", marginBottom:24 }}>
+                <div style={{ width:60, height:60, borderRadius:18, margin:"0 auto 14px",
+                              background:"#E8F6FD", border:"2px solid #2AABEE",
+                              display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <Send size={28} color="#0088CC" />
+                </div>
+                <div style={{ fontSize:18, fontWeight:900, color:C.text, marginBottom:6 }}>Telegram kod</div>
+                <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5 }}>
+                  @Requrilishbot dan 6 xonali kod keldi
+                </div>
+                <div style={{ display:"inline-block", marginTop:6, background:C.primaryLight,
+                              border:`1px solid ${C.primaryBorder}`, borderRadius:10, padding:"5px 14px",
+                              fontSize:15, fontWeight:900, color:C.primaryDark }}>
+                  +998 {phone}
+                </div>
+              </div>
 
-          <input value={code}
-            onChange={e => setCode(e.target.value.replace(/\D/g,"").slice(0,4))}
-            placeholder="• • • •" inputMode="numeric" autoFocus
-            style={{ width:"100%", boxSizing:"border-box", padding:"16px", borderRadius:16, marginBottom:8,
-                     border:`2.5px solid ${code.length>=4?C.primaryDark:C.primaryBorder}`,
-                     background:C.bg, fontSize:36, fontWeight:900, letterSpacing:14,
-                     textAlign:"center", color:C.text, outline:"none", fontFamily:"inherit", transition:"border-color .2s" }}
-            onFocus={e => e.target.style.borderColor=C.primaryDark}
-            onBlur={e  => e.target.style.borderColor=code.length>=4?C.primaryDark:C.primaryBorder}
-            onKeyDown={e => e.key==="Enter" && handleSubmit()}
-          />
+              <input value={code}
+                onChange={e => setCode(e.target.value.replace(/\D/g,"").slice(0,6))}
+                placeholder="• • • • • •" inputMode="numeric" autoFocus
+                style={{ width:"100%", boxSizing:"border-box", padding:"16px", borderRadius:16, marginBottom:16,
+                         border:`2.5px solid ${code.length>=6?C.primaryDark:C.primaryBorder}`,
+                         background:C.bg, fontSize:32, fontWeight:900, letterSpacing:10,
+                         textAlign:"center", color:C.text, outline:"none", fontFamily:"inherit", transition:"border-color .2s" }}
+                onFocus={e => e.target.style.borderColor=C.primaryDark}
+                onBlur={e  => e.target.style.borderColor=code.length>=6?C.primaryDark:C.primaryBorder}
+                onKeyDown={e => e.key==="Enter" && handleSubmit()}
+              />
 
-          <div style={{ background:C.primaryLight, border:`1px solid ${C.primaryBorder}`,
-                        borderRadius:10, padding:"8px 12px", marginBottom:16,
-                        display:"flex", alignItems:"center", gap:8 }}>
-            <FlaskConical size={14} color={C.primaryDark} />
-            <span style={{ fontSize:11, color:C.primaryDark, fontWeight:600 }}>
-              Demo rejim: ixtiyoriy 4 ta raqam kiriting (masalan: 1234)
-            </span>
-          </div>
+              {error && <ErrorBox msg={error} />}
 
-          {error && <ErrorBox msg={error} />}
+              <BtnPrimary onClick={handleSubmit} fullWidth>
+                {loading ? <><Loader2 size={15} className="spin" /> Tekshirilmoqda...</>
+                         : <><KeyRound size={15} /> Kirish</>}
+              </BtnPrimary>
 
-          <BtnPrimary onClick={handleSubmit} fullWidth>
-            {loading ? (
-              <><Loader2 size={15} className="spin" /> Tekshirilmoqda...</>
-            ) : mode==="login" ? (
-              <><KeyRound size={15} /> Kirish</>
-            ) : (
-              <><CheckCircle size={15} /> Ro'yxatdan o'tish</>
-            )}
-          </BtnPrimary>
+              <div style={{ textAlign:"center", marginTop:14, fontSize:11, color:C.textMuted }}>
+                Kod kelmadimi?{" "}
+                <span onClick={() => { setStep(1); setCode(""); }}
+                  style={{ color:C.primaryDark, fontWeight:700, cursor:"pointer" }}>
+                  Qayta yuborish
+                </span>
+              </div>
+            </>
+          ) : (
+            /* REGISTER — tasdiqlash (bot orqali kelgan, kod talab etilmaydi) */
+            <>
+              <div style={{ textAlign:"center", marginBottom:20 }}>
+                <div style={{ width:60, height:60, borderRadius:18, margin:"0 auto 14px",
+                              background:C.primaryLight, border:`2px solid ${C.primaryBorder}`,
+                              display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <CheckCircle size={28} color={C.primaryDark} />
+                </div>
+                <div style={{ fontSize:18, fontWeight:900, color:C.text, marginBottom:6 }}>Tasdiqlash</div>
+                <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.6 }}>
+                  Quyidagi ma'lumotlar bilan ro'yxatdan o'tasiz:
+                </div>
+              </div>
 
-          <div style={{ textAlign:"center", marginTop:14, fontSize:11, color:C.textMuted }}>
-            Kod kelmadimi?{" "}
-            <span onClick={() => setCode("")} style={{ color:C.primaryDark, fontWeight:700, cursor:"pointer" }}>
-              Qayta yuborish
-            </span>
-          </div>
+              <div style={{ background:C.bg, borderRadius:12, padding:"12px 14px", marginBottom:16,
+                            border:`1px solid ${C.border}`, fontSize:13, lineHeight:2 }}>
+                <div><b>Ism:</b> {name}</div>
+                <div><b>Telefon:</b> +998 {phone}</div>
+                {telegram && <div><b>Telegram:</b> {telegram}</div>}
+              </div>
+
+              {error && <ErrorBox msg={error} />}
+
+              <BtnPrimary onClick={handleSubmit} fullWidth>
+                {loading ? <><Loader2 size={15} className="spin" /> Yuklanmoqda...</>
+                         : <><CheckCircle size={15} /> Ro'yxatdan o'tish</>}
+              </BtnPrimary>
+            </>
+          )}
         </div>
       )}
     </div>

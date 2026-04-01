@@ -3,52 +3,86 @@ import { Lbl, TInput, BtnPrimary, BtnGhost } from "../components/UI";
 import AvatarUpload from "../components/AvatarUpload";
 import LocIcon from "../components/LocIcon";
 import { C, COND } from "../constants";
+import { authAPI } from "../services/api";
+import {
+  Package, Calendar, Inbox, Trash2,
+  Pencil, Check, LogOut, Lock,
+} from "lucide-react";
 
 // ─── PROFILE SCREEN ───────────────────────────────────────────────
 export default function ProfilePage({ user, setUser, myProducts, onDelete, onLogout }) {
   const [editMode, setEditMode] = useState(false);
-  const [draft, setDraft]       = useState({ ...user });
+  const [draft, setDraft]       = useState({ name: user.name, avatar: user.avatar });
+  const [saving, setSaving]     = useState(false);
 
-  const save = () => { setUser({ ...draft }); setEditMode(false); };
-  const cancel = () => { setDraft({ ...user }); setEditMode(false); };
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await authAPI.updateMe({ name: draft.name, avatar: draft.avatar });
+      setUser(updated);
+    } catch { /* silent */ }
+    setSaving(false);
+    setEditMode(false);
+  };
+  const cancel = () => { setDraft({ name: user.name, avatar: user.avatar }); setEditMode(false); };
 
   return (
-    <div style={{ padding:"20px 16px 10px", overflowY:"auto" , fontFamily:"'Nunito','Segoe UI',sans-serif", background:C.bg,
-      minHeight:"100vh", paddingBottom:84, maxWidth:430,
-      margin:"0 auto", position:"relative" }}>
+    <div style={{ padding:"20px 16px 10px", overflowY:"auto", fontFamily:"'Nunito','Segoe UI',sans-serif",
+                  background:C.bg, minHeight:"100vh", paddingBottom:84,
+                  maxWidth:430, margin:"0 auto", position:"relative" }}>
 
       {/* ── Profile card ── */}
       <div style={{ background:C.card, borderRadius:22, padding:"24px 18px 20px",
                     border:`1px solid ${C.border}`, boxShadow:C.shadow,
                     marginBottom:16, textAlign:"center" }}>
-
         <AvatarUpload
           avatar={draft.avatar} name={draft.name}
-          onAvatar={v => setDraft(d => ({ ...d, avatar:v }))}
+          onAvatar={v => setDraft(d => ({ ...d, avatar: v }))}
         />
 
         {editMode ? (
           <div style={{ textAlign:"left" }}>
             <Lbl>Ism Familiya</Lbl>
-            <TInput value={draft.name}    onChange={v=>setDraft(d=>({...d,name:v}))}    placeholder="Ism Familiya" />
+            <TInput value={draft.name} onChange={v => setDraft(d => ({ ...d, name: v }))} placeholder="Ism Familiya" />
+
+            {/* Telefon — o'zgartirish mumkin emas */}
             <Lbl>Telefon</Lbl>
-            <TInput value={draft.phone}   onChange={v=>setDraft(d=>({...d,phone:v}))}   placeholder="+998 90 000 00 00" />
-            <Lbl>Telegram manzil</Lbl>
-            <TInput value={draft.telegram||""} onChange={v=>setDraft(d=>({...d,telegram:v}))} placeholder="@username" />
+            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 13px",
+                          borderRadius:12, border:`1.5px solid ${C.border}`, background:"#F9F9F9",
+                          marginBottom:13, color:C.textMuted, fontSize:14 }}>
+              <Lock size={13} color={C.textMuted} />
+              +998 {user.phone}
+            </div>
+
+            {/* Telegram — o'zgartirish mumkin emas */}
+            <Lbl>Telegram</Lbl>
+            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 13px",
+                          borderRadius:12, border:`1.5px solid ${C.border}`, background:"#F9F9F9",
+                          marginBottom:13, color:C.textMuted, fontSize:14 }}>
+              <Lock size={13} color={C.textMuted} />
+              {user.telegram || "Bog'lanmagan"}
+            </div>
+
             <div style={{ display:"flex", gap:9, marginTop:4 }}>
               <BtnGhost onClick={cancel}>Bekor</BtnGhost>
-              <BtnPrimary onClick={save}>✅ Saqlash</BtnPrimary>
+              <BtnPrimary onClick={save} disabled={saving}>
+                <Check size={15} /> {saving ? "Saqlanmoqda..." : "Saqlash"}
+              </BtnPrimary>
             </div>
           </div>
         ) : (
           <>
             <div style={{ fontSize:20, fontWeight:900, color:C.text, marginBottom:3 }}>{user.name}</div>
-            <div style={{ fontSize:12, color:C.textMuted, marginBottom:14 }}>{user.phone}</div>
-            <button onClick={() => setEditMode(true)}
+            <div style={{ fontSize:12, color:C.textMuted, marginBottom:3 }}>+998 {user.phone}</div>
+            {user.telegram && (
+              <div style={{ fontSize:11, color:"#0088CC", marginBottom:12 }}>{user.telegram}</div>
+            )}
+            <button onClick={() => { setDraft({ name: user.name, avatar: user.avatar }); setEditMode(true); }}
               style={{ padding:"8px 22px", borderRadius:20, border:`1.5px solid ${C.primaryBorder}`,
                        background:C.primaryLight, color:C.primaryDark, fontSize:12,
-                       fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
-              ✏️ Tahrirlash
+                       fontWeight:700, cursor:"pointer", fontFamily:"inherit",
+                       display:"inline-flex", alignItems:"center", gap:6 }}>
+              <Pencil size={13} /> Tahrirlash
             </button>
           </>
         )}
@@ -56,11 +90,15 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
 
       {/* ── Stats row ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:18 }}>
-        {[["📦", myProducts.length, "E'lonlarim"],
-          ["🗓", new Date(user.joined).getFullYear(), "A'zo yili"]].map(([ic,v,l])=>(
+        {[
+          [Package,  myProducts.length,                     "E'lonlarim"],
+          [Calendar, new Date(user.joined).getFullYear(),   "A'zo yili"],
+        ].map(([Icon, v, l]) => (
           <div key={l} style={{ background:C.card, borderRadius:16, padding:"14px 10px",
-                                 textAlign:"center", border:`1px solid ${C.border}`, boxShadow:C.shadow }}>
-            <div style={{ fontSize:22, marginBottom:4 }}>{ic}</div>
+                                textAlign:"center", border:`1px solid ${C.border}`, boxShadow:C.shadow }}>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:4 }}>
+              <Icon size={22} color={C.primaryDark} />
+            </div>
             <div style={{ fontSize:22, fontWeight:900, color:C.primaryDark }}>{v}</div>
             <div style={{ fontSize:10, color:C.textMuted }}>{l}</div>
           </div>
@@ -68,16 +106,18 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
       </div>
 
       {/* ── My listings ── */}
-      <div style={{ fontSize:14, fontWeight:800, color:C.text, marginBottom:12 }}>
-        📦 Mening e'lonlarim
+      <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:14, fontWeight:800, color:C.text, marginBottom:12 }}>
+        <Package size={16} color={C.primaryDark} /> Mening e'lonlarim
       </div>
 
       {myProducts.length === 0 ? (
         <div style={{ textAlign:"center", padding:"32px 20px", color:C.textMuted,
                       background:C.card, borderRadius:16, border:`1px solid ${C.border}` }}>
-          <div style={{ fontSize:38, marginBottom:8 }}>📭</div>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}>
+            <Inbox size={38} color={C.textMuted} />
+          </div>
           <div style={{ fontSize:13, fontWeight:700 }}>Hali e'lonlar yo'q</div>
-          <div style={{ fontSize:11, marginTop:3 }}>E'lon qo'shish uchun ➕ ni bosing</div>
+          <div style={{ fontSize:11, marginTop:3 }}>E'lon qo'shish uchun + tugmasini bosing</div>
         </div>
       ) : (
         myProducts.map(p => {
@@ -87,15 +127,13 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
               style={{ background:C.card, borderRadius:16, marginBottom:10,
                        border:`1px solid ${C.border}`, boxShadow:C.shadow,
                        display:"flex", overflow:"hidden", alignItems:"stretch" }}>
-              {/* thumb */}
               <div style={{ width:80, flexShrink:0, background:C.primaryLight,
                             display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {p.photo
                   ? <img src={p.photo} alt={p.name} style={{ width:80, height:"100%", objectFit:"cover" }} />
-                  : <span style={{ fontSize:28, opacity:0.3 }}>📷</span>
+                  : <Package size={28} color={C.primaryBorder} />
                 }
               </div>
-              {/* info */}
               <div style={{ flex:1, padding:"10px 12px", minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:800, color:C.text, overflow:"hidden",
                               textOverflow:"ellipsis", whiteSpace:"nowrap", marginBottom:2 }}>{p.name}</div>
@@ -105,16 +143,18 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
                 <div style={{ display:"flex", gap:6, alignItems:"center" }}>
                   <span style={{ fontSize:9, fontWeight:700, padding:"2px 7px", borderRadius:7,
                                  background:cc.bg, color:cc.text }}>● {p.condition}</span>
-                  <span style={{ fontSize:9, color:C.textMuted, display:"inline-flex", alignItems:"center", gap:2 }}><LocIcon size={9} color={C.textMuted}/> {p.tuman||p.viloyat}</span>
+                  <span style={{ fontSize:9, color:C.textMuted, display:"inline-flex", alignItems:"center", gap:2 }}>
+                    <LocIcon size={9} color={C.textMuted}/> {p.tuman||p.viloyat}
+                  </span>
                 </div>
               </div>
-              {/* delete */}
               <div style={{ display:"flex", alignItems:"center", padding:"0 12px" }}>
                 <button onClick={() => onDelete(p.id)}
                   style={{ width:34, height:34, borderRadius:10, border:"none",
-                           background:C.dangerLight, color:C.danger, fontSize:16,
-                           cursor:"pointer", display:"flex", alignItems:"center",
-                           justifyContent:"center" }}>🗑</button>
+                           background:C.dangerLight, color:C.danger,
+                           cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           );
@@ -126,8 +166,9 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
         style={{ width:"100%", padding:"13px", borderRadius:14, marginTop:16,
                  border:`1.5px solid #FFD4D4`, background:C.dangerLight,
                  color:C.danger, fontSize:13, fontWeight:700,
-                 cursor:"pointer", fontFamily:"inherit" }}>
-        🚪 Chiqish (Logout)
+                 cursor:"pointer", fontFamily:"inherit",
+                 display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+        <LogOut size={16} /> Chiqish (Logout)
       </button>
       <div style={{ height:16 }} />
     </div>

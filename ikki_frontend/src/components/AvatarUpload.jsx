@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { C } from "../constants";
+import { Pencil, Image as ImageIcon, Camera, Trash2 } from "lucide-react";
 
 // ─── AVATAR UPLOAD ───────────────────────────────────────────────
 export default function AvatarUpload({ avatar, name, onAvatar }) {
@@ -11,7 +12,23 @@ export default function AvatarUpload({ avatar, name, onAvatar }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => onAvatar(ev.target.result);
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 300;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+          else { width = Math.round(width * MAX / height); height = MAX; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        onAvatar(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = ev.target.result;
+    };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
@@ -38,10 +55,10 @@ export default function AvatarUpload({ avatar, name, onAvatar }) {
         style={{ position:"absolute", bottom:2, right:2, width:28, height:28,
                  borderRadius:"50%", border:"2.5px solid white",
                  background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                 color:"white", fontSize:13, cursor:"pointer",
+                 color:"white", cursor:"pointer",
                  display:"flex", alignItems:"center", justifyContent:"center",
                  boxShadow:C.shadow }}>
-        ✏️
+        <Pencil size={13} color="white" />
       </div>
 
       {/* mini menu */}
@@ -51,15 +68,16 @@ export default function AvatarUpload({ avatar, name, onAvatar }) {
                       boxShadow:C.shadowMd, border:`1px solid ${C.border}`,
                       zIndex:100, minWidth:160 }}>
           {[
-            ["🖼", "Galereya", () => { galleryRef.current?.click(); setShowMenu(false); }],
-            ["📸", "Kamera",   () => { cameraRef.current?.click();  setShowMenu(false); }],
-            ...(avatar ? [["🗑","O'chirish", () => { onAvatar(null); setShowMenu(false); }]] : []),
-          ].map(([ic, lbl, fn]) => (
+            [ImageIcon,  "Galereya",   () => { galleryRef.current?.click(); setShowMenu(false); }],
+            [Camera, "Kamera",     () => { cameraRef.current?.click();  setShowMenu(false); }],
+            ...(avatar ? [[Trash2, "O'chirish", () => { onAvatar(null); setShowMenu(false); }]] : []),
+          ].map(([Icon, lbl, fn]) => (
             <div key={lbl} onClick={fn}
               style={{ padding:"9px 14px", fontSize:12, fontWeight:700,
                        color: lbl==="O'chirish" ? C.danger : C.text,
                        cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
-              <span>{ic}</span>{lbl}
+              <Icon size={14} color={lbl==="O'chirish" ? C.danger : C.textSub} />
+              {lbl}
             </div>
           ))}
         </div>

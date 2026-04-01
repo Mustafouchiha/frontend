@@ -12,14 +12,20 @@ const savedUser = () => {
   catch { return null; }
 };
 
+function hasTgParams() {
+  const p = new URLSearchParams(window.location.search);
+  return p.has("tgToken") || p.get("register") === "1";
+}
+
 export default function App() {
   const [user,       setUser]       = useState(savedUser);
-  const [nav,        setNav]        = useState("home"); // home | login | profile | payment
+  const [nav,        setNav]        = useState(hasTgParams() ? "login" : "home");
   const [products,   setProducts]   = useState([]);
   const [myProducts, setMyProducts] = useState([]);
   const [offers,     setOffers]     = useState([]);
   const [homeAction, setHomeAction] = useState(null);
   const [loading,    setLoading]    = useState(!!savedUser());
+  const [offline,    setOffline]    = useState(false);
 
   const loggedIn = !!user && !!getToken();
   const guestUser = user || { id: null, name: "Mehmon", phone: "", telegram: "", avatar: null };
@@ -47,6 +53,7 @@ export default function App() {
   const loadData = async () => {
     try {
       const prods = await productsAPI.getAll();
+      setOffline(false);
       setProducts(prods);
 
       if (getToken()) {
@@ -60,7 +67,9 @@ export default function App() {
         setMyProducts([]);
         setOffers([]);
       }
-    } catch { /* silent */ }
+    } catch (e) {
+      if (e.offline) setOffline(true);
+    }
   };
 
   const handleLogin = async (userData) => {
@@ -185,6 +194,29 @@ export default function App() {
 
   return (
     <div style={{ fontFamily:"'Nunito','Segoe UI',sans-serif", background:C.bg }}>
+      {/* Server offline banner */}
+      {offline && (
+        <div style={{ position:"fixed", top:0, left:"50%", transform:"translateX(-50%)",
+                      width:"100%", maxWidth:430, zIndex:999,
+                      background:"#EF4444", color:"white",
+                      padding:"10px 16px", display:"flex", alignItems:"center",
+                      justifyContent:"space-between", gap:10, boxSizing:"border-box",
+                      boxShadow:"0 2px 12px rgba(239,68,68,0.4)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:16 }}>🔴</span>
+            <div>
+              <div style={{ fontSize:12, fontWeight:800 }}>Server ishlamayapti</div>
+              <div style={{ fontSize:10, opacity:0.85 }}>Backend server yoqilmagan yoki ulanish yo'q</div>
+            </div>
+          </div>
+          <button onClick={loadData}
+            style={{ background:"rgba(255,255,255,0.2)", border:"none", color:"white",
+                     borderRadius:8, padding:"5px 10px", fontSize:11, fontWeight:700,
+                     cursor:"pointer", whiteSpace:"nowrap" }}>
+            Qayta urinish
+          </button>
+        </div>
+      )}
       {!loggedIn && nav === "home" && (
         <HomePage
           user={guestUser}
@@ -236,6 +268,7 @@ export default function App() {
           homeAction={homeAction}
           setHomeAction={setHomeAction}
           onProductAdded={handleAddProduct}
+          onDelete={handleDeleteProduct}
           loggedIn={true}
           onRequireAuth={() => setNav("login")}
         />

@@ -39,7 +39,21 @@
       "Bash(curl -s -X POST https://ikkiproject.vercel.app/api/auth/register -H \"Content-Type: application/json\" -d '{\"\"name\"\":\"\"Sinov Foydalanuvchi\"\",\"\"phone\"\":\"\"+998905551234\"\",\"\"code\"\":\"\"\"\",\"\"telegram\"\":\"\"@sinov\"\"}')",
       "mcp__Claude_Preview__preview_start",
       "Bash(node --version)",
-      "Bash(ls C:/Users/User/Desktop/ikki_frontend/ikki_frontend/src/pages/LoginPage*)"
+      "Bash(ls C:/Users/User/Desktop/ikki_frontend/ikki_frontend/src/pages/LoginPage*)",
+      "Bash(npm uninstall @ngrok/ngrok)",
+      "Bash(npm install lucide-react)",
+      "Bash(where ngrok)",
+      "Bash(timeout /t 4 /nobreak)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(npx localtunnel --port 5000)",
+      "Bash(npm install node-telegram-bot-api)",
+      "Bash(npm install:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(gh auth:*)"
     ]
   }
 }

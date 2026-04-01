@@ -1,5 +1,6 @@
 import LocIcon from "./LocIcon";
 import { C, COND } from "../constants";
+import { Image, Pencil } from "lucide-react";
 
 // ─── PRODUCT CARD ─────────────────────────────────────────────────
 export default function PCard({ p, onClick, isOwn }) {
@@ -19,8 +20,9 @@ export default function PCard({ p, onClick, isOwn }) {
                       background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                       color:"white", fontSize:9, fontWeight:800,
                       padding:"3px 8px", borderRadius:10,
-                      boxShadow:"0 2px 8px rgba(255,179,128,0.5)" }}>
-          ✏️ Sizniki
+                      boxShadow:"0 2px 8px rgba(255,179,128,0.5)",
+                      display:"flex", alignItems:"center", gap:4 }}>
+          <Pencil size={9} /> Sizniki
         </div>
       )}
 
@@ -33,11 +35,11 @@ export default function PCard({ p, onClick, isOwn }) {
               style={{ width:"100%", height:"100%", objectFit:"cover" }}
               onError={e => { e.target.style.display="none"; }}
             />
-          : <div style={{ fontSize:48, opacity:0.3 }}>📷</div>
+          : <Image size={48} color={C.primaryBorder} />
         }
       </div>
 
-      <div style={{ padding:"10px 12px 12px" }}>
+      <div style={{ padding:"10px 12px 0", display:"flex", flexDirection:"column", flex:1 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
           <span style={{ fontSize:9, fontWeight:700, padding:"2px 7px", borderRadius:8,
                          background:cc.bg, color:cc.text }}>● {p.condition}</span>
@@ -46,22 +48,38 @@ export default function PCard({ p, onClick, isOwn }) {
 
         <div style={{ fontSize:13, fontWeight:800, color:C.text, marginBottom:6, lineHeight:1.25 }}>{p.name}</div>
 
-        {/* Manzil — kartaning o'zida alohida va kattaroq */}
-        <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
           <LocIcon size={11} color={C.textSub} />
           <span style={{ fontSize:11, color:C.textSub, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
             {p.viloyat}{p.tuman ? ` › ${p.tuman}` : ""}
           </span>
         </div>
+      </div>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
-          <div>
-            <span style={{ fontSize:14, fontWeight:900, color:C.primaryDark }}>{p.price.toLocaleString()}</span>
-            <span style={{ fontSize:9, color:C.textMuted }}> so'm/{p.unit}</span>
+      {/* Narx + miqdor — pastda */}
+      <div style={{ margin:"8px 12px 12px", padding:"8px 10px",
+                    background:C.bg, borderRadius:12,
+                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                    flexWrap:"wrap", gap:6,
+                    borderTop:`1px solid ${C.border}` }}>
+        {/* Narx */}
+        <div style={{ textAlign:"center", flex:"1 1 auto" }}>
+          <div style={{ fontSize:14, fontWeight:900, color:C.primaryDark, lineHeight:1.2 }}>
+            {p.price.toLocaleString()}
           </div>
-          <div style={{ fontSize:10, color:C.textSub, background:C.bg,
-                        padding:"2px 7px", borderRadius:8, fontWeight:600 }}>
-            {p.qty} {p.unit}
+          <div style={{ fontSize:9, color:C.textMuted, lineHeight:1.4 }}>
+            so'm / {p.unit}
+          </div>
+        </div>
+        {/* Miqdor */}
+        <div style={{ textAlign:"center", background:C.card,
+                      padding:"3px 10px", borderRadius:8,
+                      border:`1px solid ${C.border}`, flex:"0 0 auto" }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.textSub, lineHeight:1.2 }}>
+            {p.qty}
+          </div>
+          <div style={{ fontSize:8, color:C.textMuted, lineHeight:1.4 }}>
+            {p.unit}
           </div>
         </div>
       </div>
