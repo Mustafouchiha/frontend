@@ -983,54 +983,47 @@ export default function HomePage({
         </div>
       )}
 
-      {/* ═══ BOTTOM NAV ═══ */}
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
-                    width:"100%", maxWidth:430, background:"rgba(255,255,255,0.96)",
-                    backdropFilter:"blur(16px)", borderTop:`1px solid ${C.border}`,
-                    boxShadow:"0 -2px 14px rgba(0,0,0,0.06)",
-                    display:"flex", alignItems:"center",
-                    padding:"10px 0 20px", zIndex:30 }}>
+      {/* ═══ BOTTOM NAV — faqat guest uchun (loggedIn uchun App.jsx dan keladi) ═══ */}
+      {!loggedIn && (
+        <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
+                      width:"100%", maxWidth:430, background:"rgba(255,255,255,0.96)",
+                      backdropFilter:"blur(16px)", borderTop:`1px solid ${C.border}`,
+                      boxShadow:"0 -2px 14px rgba(0,0,0,0.06)",
+                      display:"flex", alignItems:"center",
+                      padding:"10px 0 20px", zIndex:30 }}>
 
-        <div onClick={() => onNavChange("home")}
-          style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
-          <div style={{ display:"flex", justifyContent:"center" }}>
-            <Home size={22} color={C.primaryDark} />
+          <div onClick={() => onNavChange("home")}
+            style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
+            <div style={{ display:"flex", justifyContent:"center" }}>
+              <Home size={22} color={C.primaryDark} />
+            </div>
+            <div style={{ fontSize:9, marginTop:3, color:C.primaryDark, fontWeight:700 }}>Bosh</div>
           </div>
-          <div style={{ fontSize:9, marginTop:3, color:C.primaryDark, fontWeight:700 }}>Bosh</div>
-        </div>
 
-        <div onClick={openAdd}
-          style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer" }}>
-          <div style={{ width:52, height:52, borderRadius:17,
-                        background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                        display:"flex", alignItems:"center", justifyContent:"center",
-                        marginTop:-24, boxShadow:`0 6px 20px rgba(255,179,128,0.6)`,
-                        border:"3px solid white" }}>
-            <Plus size={26} color="white" strokeWidth={2.5} />
+          <div onClick={openAdd}
+            style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer" }}>
+            <div style={{ width:52, height:52, borderRadius:17,
+                          background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          marginTop:-24, boxShadow:`0 6px 20px rgba(255,179,128,0.6)`,
+                          border:"3px solid white" }}>
+              <Plus size={26} color="white" strokeWidth={2.5} />
+            </div>
+            <div style={{ fontSize:9, marginTop:4, color:C.textMuted, fontWeight:400 }}>E'lon</div>
           </div>
-          <div style={{ fontSize:9, marginTop:4, color:C.textMuted, fontWeight:400 }}>E'lon</div>
-        </div>
 
-        <div onClick={() => (loggedIn ? onNavChange("profile") : requireAuth())}
-          style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
-          <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
-                        overflow:"hidden",
-                        border:`2.5px solid ${C.border}`,
-                        background:user.avatar?"transparent":`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                        display:"flex", alignItems:"center", justifyContent:"center",
-                        transition:"border-color 0.2s" }}>
-            {user.avatar
-              ? <img src={user.avatar} alt="av" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-              : <span style={{ fontSize:11, fontWeight:900, color:"white" }}>
-                  {user.name.split(" ").map(w=>w[0]).join("").slice(0,2)}
-                </span>
-            }
-          </div>
-          <div style={{ fontSize:9, marginTop:3, color:C.textMuted, fontWeight:400 }}>
-            {loggedIn ? "Profil" : "Kirish"}
+          <div onClick={requireAuth}
+            style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
+            <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
+                          overflow:"hidden", border:`2.5px solid ${C.border}`,
+                          background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                          display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ fontSize:11, fontWeight:900, color:"white" }}>?</span>
+            </div>
+            <div style={{ fontSize:9, marginTop:3, color:C.textMuted, fontWeight:400 }}>Kirish</div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

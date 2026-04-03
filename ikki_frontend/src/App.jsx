@@ -5,6 +5,7 @@ import ProfilePage from "./pages/ProfilePage";
 import PaymentPage from "./pages/PaymentPage";
 import { C } from "./constants";
 import { getToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services/api";
+import { Home, Plus } from "lucide-react";
 
 // Saved user from localStorage (for instant load without flicker)
 const savedUser = () => {
@@ -142,7 +143,9 @@ export default function App() {
       {/* Bosh sahifa */}
       <div onClick={() => setNav("home")}
         style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
-        <div style={{ fontSize:22, lineHeight:1 }}>🏠</div>
+        <div style={{ display:"flex", justifyContent:"center" }}>
+          <Home size={22} color={nav==="home" ? C.primaryDark : C.textMuted} />
+        </div>
         <div style={{ fontSize:9, marginTop:3,
           color: nav==="home" ? C.primaryDark : C.textMuted,
           fontWeight: nav==="home" ? 800 : 400 }}>Bosh</div>
@@ -155,9 +158,10 @@ export default function App() {
         <div style={{ width:52, height:52, borderRadius:17,
                       background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                       display:"flex", alignItems:"center", justifyContent:"center",
-                      fontSize:24, marginTop:-24,
-                      boxShadow:`0 6px 20px rgba(255,179,128,0.6)`,
-                      border:"3px solid white" }}>➕</div>
+                      marginTop:-24, boxShadow:`0 6px 20px rgba(255,179,128,0.6)`,
+                      border:"3px solid white" }}>
+          <Plus size={26} color="white" strokeWidth={2.5} />
+        </div>
         <div style={{ fontSize:9, marginTop:4, color:C.textMuted, fontWeight:400 }}>E'lon</div>
       </div>
 
@@ -166,8 +170,8 @@ export default function App() {
         style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
         <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
                       overflow:"hidden",
-                      border:`2.5px solid ${C.border}`,
-                      background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                      border:`2.5px solid ${nav==="profile" ? C.primaryDark : C.border}`,
+                      background: user.avatar ? "transparent" : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                       display:"flex", alignItems:"center", justifyContent:"center" }}>
           {user.avatar
             ? <img src={user.avatar} alt="av" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
@@ -176,7 +180,9 @@ export default function App() {
               </span>
           }
         </div>
-        <div style={{ fontSize:9, marginTop:3, color:C.textMuted, fontWeight:400 }}>Profil</div>
+        <div style={{ fontSize:9, marginTop:3,
+          color: nav==="profile" ? C.primaryDark : C.textMuted,
+          fontWeight: nav==="profile" ? 700 : 400 }}>Profil</div>
       </div>
     </div>
   );
@@ -240,20 +246,23 @@ export default function App() {
       )}
 
       {loggedIn && (nav === "home" || (nav !== "profile")) && (
-        <HomePage
-          user={user}
-          products={products}
-          setProducts={setProducts}
-          offers={offers}
-          setOffers={setOffers}
-          onNavChange={setNav}
-          homeAction={homeAction}
-          setHomeAction={setHomeAction}
-          onProductAdded={handleAddProduct}
-          onDelete={handleDeleteProduct}
-          loggedIn={true}
-          onRequireAuth={() => setNav("login")}
-        />
+        <>
+          <HomePage
+            user={user}
+            products={products}
+            setProducts={setProducts}
+            offers={offers}
+            setOffers={setOffers}
+            onNavChange={setNav}
+            homeAction={homeAction}
+            setHomeAction={setHomeAction}
+            onProductAdded={handleAddProduct}
+            onDelete={handleDeleteProduct}
+            loggedIn={true}
+            onRequireAuth={() => setNav("login")}
+          />
+          <BottomNav />
+        </>
       )}
     </div>
   );
