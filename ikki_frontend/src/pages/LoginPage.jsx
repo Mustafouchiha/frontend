@@ -10,7 +10,10 @@ import {
 
 // 90 999 90 90 formatida ko'rsatish
 function formatPhone(raw) {
-  const d = raw.replace(/\D/g, "").slice(0, 9);
+  let d = raw.replace(/\D/g, "");
+  // Agar foydalanuvchi +998 yoki 998 bilan kiritsa, uni olib tashlaymiz
+  if (d.startsWith("998")) d = d.slice(3);
+  d = d.slice(0, 9);
   if (d.length <= 2) return d;
   if (d.length <= 5) return `${d.slice(0,2)} ${d.slice(2)}`;
   if (d.length <= 7) return `${d.slice(0,2)} ${d.slice(2,5)} ${d.slice(5)}`;
@@ -50,21 +53,36 @@ export default function LoginPage({ onLogin }) {
           localStorage.setItem("rm_user", JSON.stringify(data.user));
           onLogin(data.user);
         })
-        .catch((e) => {
-          setError(e.message?.includes("yaroqsiz") || e.message?.includes("muddati")
-            ? "Havola eskirgan. Botdan yangi havola oling."
-            : (e.message || "Telegram orqali kirishda xatolik"));
+        .catch(() => {
+          // Token eskirgan yoki yaroqsiz — login formani ko'rsat
           setLoading(false);
         });
     } else if (isReg && tgPhone) {
-      // Yangi foydalanuvchi — ro'yxatdan o'tish formasi to'ldiriladi
+      // Yangi foydalanuvchi — bot orqali kelgan, avtomatik ro'yxatdan o'tish
       const digits = tgPhone.replace(/\D/g, "").slice(-9);
-      setMode("register");
-      setPhone(formatPhone(digits));
-      if (tgName)  setName(tgName);
-      if (tgUser)  setTelegram(tgUser);
-      // tgChatId ni keyingi submit uchun saqlab qo'yamiz
-      if (tgChatId) window.__tgChatId = tgChatId;
+      const cleanName = tgName || "Foydalanuvchi";
+      setLoading(true);
+      authAPI.register({
+        name: cleanName,
+        phone: digits,
+        telegram: tgUser || "",
+        tgChatId: tgChatId || null,
+      })
+        .then((data) => {
+          setToken(data.token);
+          localStorage.setItem("rm_user", JSON.stringify(data.user));
+          onLogin(data.user);
+        })
+        .catch((e) => {
+          // Ro'yxatdan o'tish muvaffaqiyatsiz bo'lsa — formani ko'rsat
+          setMode("register");
+          setPhone(formatPhone(digits));
+          setName(cleanName);
+          if (tgUser) setTelegram(tgUser);
+          if (tgChatId) window.__tgChatId = tgChatId;
+          setError(e.message || "Xatolik yuz berdi");
+          setLoading(false);
+        });
     }
   }, []);
 
