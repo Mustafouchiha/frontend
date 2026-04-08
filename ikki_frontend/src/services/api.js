@@ -1,7 +1,8 @@
-// Production da VITE_API_URL, development da Vite proxy orqali /api
-const BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : "/api";
+// Production da VITE_API_URL bo'lmasa ham backend URL fallback ishlaydi.
+const PROD_API_FALLBACK = "https://backend-a5zy.onrender.com";
+const RAW_BASE = import.meta.env.VITE_API_URL
+  || (import.meta.env.PROD ? PROD_API_FALLBACK : "");
+const BASE = RAW_BASE ? `${RAW_BASE}/api` : "/api";
 
 // ─── Token helpers ────────────────────────────────────────────────
 export const getToken  = ()    => localStorage.getItem("rm_token");
