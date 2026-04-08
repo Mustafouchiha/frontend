@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Lbl, TInput, BtnPrimary, BtnGhost } from "../components/UI";
 import AvatarUpload from "../components/AvatarUpload";
 import LocIcon from "../components/LocIcon";
-import { C, COND } from "../constants";
+import { C, COND, OPERATOR } from "../constants";
 
 // ─── PROFILE SCREEN ───────────────────────────────────────────────
 export default function ProfilePage({ user, setUser, myProducts, onDelete, onLogout }) {
@@ -52,6 +52,28 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
             </button>
           </>
         )}
+      </div>
+
+      {/* ── Balans kartasi ── */}
+      <div style={{ borderRadius:20, padding:"18px 20px", marginBottom:14,
+                    background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                    boxShadow:`0 6px 24px rgba(244,137,74,0.35)`, color:"#fff" }}>
+        <div style={{ fontSize:11, opacity:0.85, marginBottom:4 }}>Hisobingiz</div>
+        <div style={{ fontSize:30, fontWeight:900, letterSpacing:1, marginBottom:6 }}>
+          {Number(user.balance || 0).toLocaleString()} so'm
+        </div>
+        <div style={{ fontSize:11, opacity:0.8, marginBottom:14 }}>
+          Pul qo'shish uchun operatorga murojaat qiling
+        </div>
+        <a
+          href={`https://t.me/${OPERATOR.telegram.replace("@","")}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{ display:"inline-flex", alignItems:"center", gap:7,
+                   background:"rgba(255,255,255,0.25)", borderRadius:12,
+                   padding:"8px 16px", color:"#fff", textDecoration:"none",
+                   fontSize:12, fontWeight:700 }}>
+          ✈️ {OPERATOR.telegram} — Pul qo'shish
+        </a>
       </div>
 
       {/* ── Stats row ── */}

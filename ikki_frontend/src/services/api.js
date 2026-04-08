@@ -51,6 +51,24 @@ export const authAPI = {
     apiFetch(`${BASE}/auth/tg-token/${token}`, { headers: headers() }).then(handle),
 };
 
+// ─── OPERATOR ─────────────────────────────────────────────────────
+export const operatorAPI = {
+  getUsers: (q = "") =>
+    apiFetch(`${BASE}/operator/users${q ? "?q=" + encodeURIComponent(q) : ""}`, { headers: headers() }).then(handle),
+
+  deleteUser: (id) =>
+    apiFetch(`${BASE}/operator/users/${id}`, { method: "DELETE", headers: headers() }).then(handle),
+
+  deposit: (phone, amount) =>
+    apiFetch(`${BASE}/operator/deposit`, { method: "POST", headers: headers(), body: JSON.stringify({ phone, amount }) }).then(handle),
+
+  getProducts: (q = "") =>
+    apiFetch(`${BASE}/operator/products${q ? "?q=" + encodeURIComponent(q) : ""}`, { headers: headers() }).then(handle),
+
+  deleteProduct: (id) =>
+    apiFetch(`${BASE}/operator/products/${id}`, { method: "DELETE", headers: headers() }).then(handle),
+};
+
 // ─── PRODUCTS ─────────────────────────────────────────────────────
 export const productsAPI = {
   // Barcha mahsulotlar (o'zinikidan tashqari)

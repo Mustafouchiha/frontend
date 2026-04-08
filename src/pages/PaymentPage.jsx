@@ -137,13 +137,22 @@ export default function PaymentPage({ user }) {
           {fmtCard(opCard.card)}
         </div>
         <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 14 }}>{opCard.name}</div>
-        <button onClick={() => copy(opCard.card)} style={{
-          background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 10,
-          color: "#fff", padding: "7px 16px", fontSize: 12, fontWeight: 700,
-          cursor: "pointer",
-        }}>
-          📋 Nusxalash
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => copy(opCard.card)} style={{
+            background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 10,
+            color: "#fff", padding: "7px 16px", fontSize: 12, fontWeight: 700,
+            cursor: "pointer",
+          }}>
+            📋 Nusxalash
+          </button>
+          <a href={`https://t.me/${opCard.telegram?.replace("@","") || "remarket_operator"}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 10,
+              color: "#fff", padding: "7px 16px", fontSize: 12, fontWeight: 700,
+              cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+            ✈️ Operator
+          </a>
+        </div>
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────── */}
@@ -335,14 +344,23 @@ export default function PaymentPage({ user }) {
               <div style={{ fontSize: 18, fontWeight: 900, color: C.primaryDark, letterSpacing: 1 }}>
                 {fmtCard(opCard.card)}
               </div>
-              <div style={{ fontSize: 12, color: C.textSub }}>{opCard.name}</div>
-              <button onClick={() => copy(opCard.card)} style={{
-                marginTop: 8, background: C.primaryDark, border: "none",
-                borderRadius: 8, color: "#fff", padding: "6px 14px",
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
-              }}>
-                📋 Nusxalash
-              </button>
+              <div style={{ fontSize: 12, color: C.textSub, marginBottom: 8 }}>{opCard.name}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => copy(opCard.card)} style={{
+                  background: C.primaryDark, border: "none",
+                  borderRadius: 8, color: "#fff", padding: "6px 14px",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer",
+                }}>
+                  📋 Nusxalash
+                </button>
+                <a href={`https://t.me/${(opCard.telegram || "@remarket_operator").replace("@","")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ background: "#0088CC", borderRadius: 8, color: "#fff", padding: "6px 14px",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "none",
+                    display: "inline-flex", alignItems: "center" }}>
+                  ✈️ Operatorga yozish
+                </a>
+              </div>
             </div>
 
             {/* Karta ma'lumotlari */}

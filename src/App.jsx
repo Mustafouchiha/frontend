@@ -226,19 +226,22 @@ export default function App() {
       )}
 
       {loggedIn && (nav === "home" || (nav !== "profile" && nav !== "payment")) && (
-        <HomePage
-          user={user}
-          products={products}
-          setProducts={setProducts}
-          offers={offers}
-          setOffers={setOffers}
-          onNavChange={setNav}
-          homeAction={homeAction}
-          setHomeAction={setHomeAction}
-          onProductAdded={handleAddProduct}
-          loggedIn={true}
-          onRequireAuth={() => setNav("login")}
-        />
+        <>
+          <HomePage
+            user={user}
+            products={products}
+            setProducts={setProducts}
+            offers={offers}
+            setOffers={setOffers}
+            onNavChange={setNav}
+            homeAction={homeAction}
+            setHomeAction={setHomeAction}
+            onProductAdded={handleAddProduct}
+            loggedIn={true}
+            onRequireAuth={() => setNav("login")}
+          />
+          <BottomNav />
+        </>
       )}
     </div>
   );

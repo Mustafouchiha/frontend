@@ -542,18 +542,22 @@ export default function HomePage({
           </div>
 
           {/* Operator telegram */}
-          <div style={{ background:"#E8F4FD", borderRadius:14, padding:"12px 14px",
-                        marginBottom:14, border:"1px solid #BFDBF7",
-                        display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:12, background:"#0088CC",
-                          display:"flex", alignItems:"center", justifyContent:"center",
-                          fontSize:20, flexShrink:0 }}>✈️</div>
-            <div>
-              <div style={{ fontSize:11, color:"#0088CC", fontWeight:700 }}>Operator Telegram</div>
-              <div style={{ fontSize:15, fontWeight:900, color:"#005580" }}>{OPERATOR.telegram}</div>
-              <div style={{ fontSize:10, color:"#6B7280", marginTop:2 }}>Chekni shu manzilga yuboring</div>
+          <a href={`https://t.me/${OPERATOR.telegram.replace("@","")}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ textDecoration:"none", display:"block",
+                     background:"#E8F4FD", borderRadius:14, padding:"12px 14px",
+                     marginBottom:14, border:"1px solid #BFDBF7" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ width:40, height:40, borderRadius:12, background:"#0088CC",
+                            display:"flex", alignItems:"center", justifyContent:"center",
+                            fontSize:20, flexShrink:0 }}>✈️</div>
+              <div>
+                <div style={{ fontSize:11, color:"#0088CC", fontWeight:700 }}>Operator Telegram → Bosib oching</div>
+                <div style={{ fontSize:15, fontWeight:900, color:"#005580" }}>{OPERATOR.telegram}</div>
+                <div style={{ fontSize:10, color:"#6B7280", marginTop:2 }}>Chekni shu manzilga yuboring</div>
+              </div>
             </div>
-          </div>
+          </a>
 
           <div style={{ fontSize:11, color:C.textMuted, lineHeight:1.7, marginBottom:18,
                         background:"#FFFBEB", borderRadius:12, padding:"10px 13px",
@@ -761,8 +765,8 @@ export default function HomePage({
         </Sheet>
       )}
 
-      {/* ═══ BOTTOM NAV — 3 items ═══ */}
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
+      {/* ═══ BOTTOM NAV — faqat guest uchun ═══ */}
+      {!loggedIn && <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)",
                     width:"100%", maxWidth:430, background:"rgba(255,255,255,0.96)",
                     backdropFilter:"blur(16px)", borderTop:`1px solid ${C.border}`,
                     boxShadow:"0 -2px 14px rgba(0,0,0,0.06)",
@@ -809,9 +813,9 @@ export default function HomePage({
           </div>
           <div style={{ fontSize:9, marginTop:3,
                         color:C.textMuted,
-                        fontWeight:400 }}>{loggedIn ? "Profil" : "Kirish"}</div>
+                        fontWeight:400 }}>Kirish</div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -3,9 +3,13 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import PaymentPage from "./pages/PaymentPage";
+import OperatorPage from "./pages/OperatorPage";
 import { C } from "./constants";
 import { getToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services/api";
 import { Home, Plus } from "lucide-react";
+
+const OPERATOR_PHONES = ["331350206"];
+const isOperator = (user) => user && OPERATOR_PHONES.includes(user.phone);
 
 // Saved user from localStorage (for instant load without flicker)
 const savedUser = () => {
@@ -232,6 +236,10 @@ export default function App() {
         <LoginPage onLogin={handleLogin} />
       )}
 
+      {loggedIn && nav === "operator" && (
+        <OperatorPage onBack={() => setNav("profile")} />
+      )}
+
       {loggedIn && nav === "profile" && (
         <>
           <ProfilePage
@@ -240,6 +248,8 @@ export default function App() {
             myProducts={myProducts}
             onDelete={handleDeleteProduct}
             onLogout={handleLogout}
+            isOperator={isOperator(user)}
+            onOpenOperator={() => setNav("operator")}
           />
           <BottomNav />
         </>

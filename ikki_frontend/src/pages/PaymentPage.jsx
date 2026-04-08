@@ -58,7 +58,7 @@ export default function PaymentPage({ user }) {
         paymentsAPI.my(),
         paymentsAPI.info(),
       ]);
-      setSent(sent.filter(o => o.status !== "paid"));
+      setSent(sent);
       setRecv(recv);
       setHist(hist);
       setOpCard(info);
@@ -69,7 +69,7 @@ export default function PaymentPage({ user }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── To'lovni tasdiqlash (seller) ─────────────────────────────────
+  // ── To'lovni tasdiqlash (seller) — bu endi modal-submit ichida avtomatik bo'ladi ──
   const confirmPayment = async (offerId) => {
     try {
       await paymentsAPI.confirm(offerId);
@@ -86,7 +86,9 @@ export default function PaymentPage({ user }) {
     setSub(true);
     try {
       await paymentsAPI.send({ offerId: modal.id, cardFrom, note });
-      showToast("To'lov ma'lumotlari yuborildi ✅");
+      // Seller 5% to'lovni yuborganidan keyin darhol tasdiqlaydi:
+      await paymentsAPI.confirm(modal.id);
+      showToast("To'lov tasdiqlandi ✅");
       setModal(null);
       setCardFrom(""); setNote("");
       await load();
@@ -105,6 +107,8 @@ export default function PaymentPage({ user }) {
 
   // ── Pending to'lovlar (buyer ko'radi) ────────────────────────────
   const pendingOffers = sentOffers.filter(o => o.status === "pending");
+  // ── Paid offerlar (fee to'langanidan keyin buyer ko'radi) ─────────
+  const paidOffers = sentOffers.filter(o => o.status === "paid");
   // ── Tasdiqlash kutilayotgan (seller ko'radi) ─────────────────────
   const toConfirm = recvOffers.filter(o => o.status === "pending");
 
@@ -174,14 +178,46 @@ export default function PaymentPage({ user }) {
       </div>
 
       {/* ── Kutilayotgan tab ─────────────────────────────────────── */}
-      {tab === "pending" && (
+          {tab === "pending" && (
         <div style={{ padding: "12px 16px 0" }}>
 
-          {/* Buyer: to'lov yuborish kerak bo'lgan offerlar */}
+          {/* Buyer: to'lov qilingan — sotuvchi kontaktlari ochildi */}
+          {paidOffers.length > 0 && (
+            <>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
+                ✅ Sotuvchi ma'lumotlari ochildi
+              </div>
+              {paidOffers.map(o => (
+                <div key={o.id} style={{
+                  background: C.card, borderRadius: 14, padding: "14px 16px",
+                  marginBottom: 10, boxShadow: C.shadow, border: `1px solid ${C.border}`,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: C.text }}>
+                      {o.productName}
+                    </div>
+                    <StatusBadge status={o.status} />
+                  </div>
+
+                  <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
+                    👤 {o.sellerName}
+                  </div>
+                  <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
+                    📞 Telefon: +998 {o.sellerPhone}
+                  </div>
+                  <div style={{ fontSize: 13, color: C.textSub }}>
+                    ✈️ Telegram: {o.sellerTelegram}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {/* Buyer: 5% to'lov seller tomonidan kutilmoqda */}
           {pendingOffers.length > 0 && (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                💸 To'lash kerak
+                ⏳ To'lov kutilmoqda
               </div>
               {pendingOffers.map(o => (
                 <div key={o.id} style={{
@@ -195,21 +231,8 @@ export default function PaymentPage({ user }) {
                     <StatusBadge status={o.status} />
                   </div>
                   <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
-                    Narx: <b style={{ color: C.primaryDark }}>{fmtPrice(o.productPrice)}</b>
+                    Sotuvchi 5% xizmat haqini to'ldirishi kutilmoqda.
                   </div>
-                  {o.sellerName && (
-                    <div style={{ fontSize: 12, color: C.textMuted }}>Sotuvchi: {o.sellerName}</div>
-                  )}
-                  <button
-                    onClick={() => { setModal(o); setCardFrom(""); setNote(""); }}
-                    style={{
-                      marginTop: 10, width: "100%", background: `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                      border: "none", borderRadius: 10, color: "#fff", fontWeight: 700,
-                      padding: "9px 0", cursor: "pointer", fontSize: 13,
-                    }}
-                  >
-                    💳 To'lovni tasdiqlash
-                  </button>
                 </div>
               ))}
             </>
@@ -231,32 +254,28 @@ export default function PaymentPage({ user }) {
                     <StatusBadge status={o.status} />
                   </div>
                   <div style={{ fontSize: 13, color: C.textSub, marginBottom: 2 }}>
-                    Xaridor: <b>{o.buyerName}</b>
-                  </div>
-                  <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
-                    Tel: {o.buyerPhone}
-                    {o.buyerTelegram ? ` | ${o.buyerTelegram}` : ""}
+                    Xaridor ID: <b>{o.buyerPublicId || "—"}</b>
                   </div>
                   <div style={{ fontSize: 13, color: C.primaryDark, fontWeight: 700 }}>
-                    {fmtPrice(o.productPrice)}
+                    {Math.round(o.productPrice * 0.05).toLocaleString()} so'm (5% fee)
                   </div>
                   <button
-                    onClick={() => confirmPayment(o.id)}
+                    onClick={() => { setModal(o); setCardFrom(""); setNote(""); }}
                     style={{
                       marginTop: 10, width: "100%",
-                      background: "linear-gradient(135deg,#28A869,#1e7e50)",
+                      background: `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                       border: "none", borderRadius: 10, color: "#fff",
                       fontWeight: 700, padding: "9px 0", cursor: "pointer", fontSize: 13,
                     }}
                   >
-                    ✅ To'lovni tasdiqlash
+                    💳 5% to'lovni yuborish
                   </button>
                 </div>
               ))}
             </>
           )}
 
-          {pendingOffers.length === 0 && toConfirm.length === 0 && (
+          {pendingOffers.length === 0 && paidOffers.length === 0 && toConfirm.length === 0 && (
             <div style={{
               textAlign: "center", padding: "40px 20px",
               color: C.textMuted, fontSize: 14,
@@ -328,11 +347,14 @@ export default function PaymentPage({ user }) {
             width: "100%", maxWidth: 430, padding: "20px 20px 36px",
             boxShadow: "0 -4px 30px rgba(0,0,0,0.15)",
           }}>
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ textAlign: "center", marginBottom: 16 }}>
               <div style={{ width: 40, height: 4, borderRadius: 2, background: C.border, margin: "0 auto 14px" }} />
-              <div style={{ fontSize: 17, fontWeight: 900, color: C.text }}>To'lovni tasdiqlash</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: C.text }}>To'lovni yuborish va tasdiqlash</div>
               <div style={{ fontSize: 13, color: C.textSub, marginTop: 4 }}>
-                {modal.productName} — <b style={{ color: C.primaryDark }}>{fmtPrice(modal.productPrice)}</b>
+                {modal.productName} — Xizmat haqi (5%):{" "}
+                <b style={{ color: C.primaryDark }}>
+                  {Math.round(modal.productPrice * 0.05).toLocaleString()} so'm
+                </b>
               </div>
             </div>
 

@@ -76,5 +76,5 @@ export const EMPTY_FORM = { name:"", category:"g'isht", price:"", unit:"dona", q
 export const OPERATOR = {
   telegram: "@Requrilish_admin",
   card:     "8600 1234 5678 9012",
-  name:     "ReMarket Operator",
+  name:     "Mustafo Ismoiljonov",
 };

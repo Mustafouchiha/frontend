@@ -92,6 +92,7 @@ export default function LoginPage({ onLogin }) {
     setError("");
     if (!phone.trim()) { setError("Telefon raqam kiriting"); return; }
     if (mode === "register" && !name.trim()) { setError("Ism familiya kiriting"); return; }
+    if (mode === "register" && !telegram.trim()) { setError("Telegram username kiriting"); return; }
 
     if (mode === "login") {
       // Login: Telegram'ga OTP yuborish
@@ -121,6 +122,7 @@ export default function LoginPage({ onLogin }) {
       || null;
 
     if (mode === "register") {
+      if (!telegram.trim()) { setError("Telegram username majburiy"); return; }
       // Ro'yxatdan o'tish — kod talab etilmaydi (bot orqali kelgan)
       setLoading(true);
       try {
@@ -211,14 +213,14 @@ export default function LoginPage({ onLogin }) {
           ) : (
             <PhoneInput value={phone} onChange={setPhone} onEnter={handleNextStep} />
           )}
-          {mode === "register" && telegram && (
+          {mode === "register" && (
             <>
-              <Lbl>Telegram</Lbl>
-              <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 13px",
-                            borderRadius:12, border:`1.5px solid ${C.border}`, background:"#F9F9F9",
-                            marginBottom:13, color:C.textMuted, fontSize:14 }}>
-                {telegram}
-              </div>
+              <Lbl>Telegram username *</Lbl>
+              <TInput
+                value={telegram}
+                onChange={setTelegram}
+                placeholder="@username"
+              />
             </>
           )}
 

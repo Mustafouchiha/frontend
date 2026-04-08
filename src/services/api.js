@@ -22,7 +22,7 @@ const handle = async (res) => {
 
 // ─── AUTH ─────────────────────────────────────────────────────────
 export const authAPI = {
-  // Telefon raqamga kod yuborish (console.log da ko'rinadi)
+  // Telegram botga OTP kod yuborish
   sendCode: (phone) =>
     fetch(`${BASE}/auth/send-code`, { method: "POST", headers: headers(), body: JSON.stringify({ phone }) }).then(handle),
 
@@ -31,6 +31,10 @@ export const authAPI = {
 
   login: (body) =>
     fetch(`${BASE}/auth/login`, { method: "POST", headers: headers(), body: JSON.stringify(body) }).then(handle),
+
+  // Bot yuborgan 1-martalik token bilan avtomatik login
+  loginWithTgToken: (token) =>
+    fetch(`${BASE}/auth/tg-token/${encodeURIComponent(token)}`, { headers: headers() }).then(handle),
 
   me: () =>
     fetch(`${BASE}/auth/me`, { headers: headers() }).then(handle),

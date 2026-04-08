@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 // ─── PROFILE SCREEN ───────────────────────────────────────────────
-export default function ProfilePage({ user, setUser, myProducts, onDelete, onLogout }) {
+export default function ProfilePage({ user, setUser, myProducts, onDelete, onLogout, isOperator, onOpenOperator }) {
   const [editMode,  setEditMode]  = useState(false);
   const [draft,     setDraft]     = useState({ name: user.name, avatar: user.avatar });
   const [saving,    setSaving]    = useState(false);
@@ -87,7 +87,7 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
                           borderRadius:12, border:`1.5px solid ${C.border}`, background:"#F9F9F9",
                           marginBottom:13, color:C.textMuted, fontSize:14 }}>
               <Lock size={13} color={C.textMuted} />
-              {user.telegram || "Bog'lanmagan"}
+              {user.telegram || "Telegram username yo'q"}
             </div>
 
             <div style={{ display:"flex", gap:9, marginTop:4 }}>
@@ -101,9 +101,12 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
           <>
             <div style={{ fontSize:20, fontWeight:900, color:C.text, marginBottom:3 }}>{user.name}</div>
             <div style={{ fontSize:12, color:C.textMuted, marginBottom:3 }}>+998 {user.phone}</div>
-            {user.telegram && (
-              <div style={{ fontSize:11, color:"#0088CC", marginBottom:12 }}>{user.telegram}</div>
-            )}
+            <div style={{ fontSize:11, color:C.textMuted, marginBottom:3 }}>
+              ID: {user.publicId || user.public_id || "—"}
+            </div>
+            <div style={{ fontSize:11, color:"#0088CC", marginBottom:12 }}>
+              Telegram: {user.telegram || "—"}
+            </div>
             <button onClick={() => { setDraft({ name: user.name, avatar: user.avatar }); setEditMode(true); }}
               style={{ padding:"8px 22px", borderRadius:20, border:`1.5px solid ${C.primaryBorder}`,
                        background:C.primaryLight, color:C.primaryDark, fontSize:12,
@@ -210,6 +213,18 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
             </div>
           );
         })
+      )}
+
+      {/* ── Operator tugmasi ── */}
+      {isOperator && (
+        <button onClick={onOpenOperator}
+          style={{ width:"100%", padding:"13px", borderRadius:14, marginTop:8,
+                   border:`1.5px solid ${C.primaryBorder}`,
+                   background:C.primaryLight, color:C.primaryDark, fontSize:13, fontWeight:700,
+                   cursor:"pointer", fontFamily:"inherit",
+                   display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          ⚙️ Operator paneli
+        </button>
       )}
 
       {/* ── Logout ── */}

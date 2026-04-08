@@ -5,7 +5,7 @@ import LocIcon from "../components/LocIcon";
 import PhotoUpload from "../components/PhotoUpload";
 import StepBar from "../components/StepBar";
 import { C, COND, UZ, CATS, CAT_ICO, EMPTY_FORM, OPERATOR } from "../constants";
-import { productsAPI, offersAPI } from "../services/api";
+import { productsAPI, offersAPI, paymentsAPI } from "../services/api";
 import Logo from "../components/Logo";
 import {
   Bell, Lock, Search, SearchX, Image as ImageIcon,
@@ -27,6 +27,9 @@ export default function HomePage({
   const [showNotifs, setShowNotifs] = useState(false);
   const [showPayment,setShowPayment]= useState(null);
   const [showBuyer,  setShowBuyer]  = useState(null);
+  const [cardFrom,   setCardFrom]   = useState("");
+  const [note,       setNote]       = useState("");
+  const [paying,     setPaying]     = useState(false);
   const [showLoc,    setShowLoc]    = useState(false);
   const [fVil,   setFVil]   = useState("");
   const [fTum,   setFTum]   = useState("");
@@ -129,11 +132,20 @@ export default function HomePage({
   };
 
   const confirmPayment = async (offerId) => {
+    setPaying(true);
     try {
-      await offersAPI.markPaid(offerId);
-      setOffers(prev => prev.map(o => o.id===offerId ? {...o, status:"paid"} : o));
+      // 5% to'lovni (seller) yuboradi va keyin tasdiqlaydi.
+      await paymentsAPI.send({ offerId, cardFrom, note });
+      await paymentsAPI.confirm(offerId);
+      setOffers(prev => prev.map(o => o.id===offerId ? { ...o, status:"paid" } : o));
       setShowPayment(null);
-    } catch (e) { alert(e.message); }
+      setCardFrom("");
+      setNote("");
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setPaying(false);
+    }
   };
 
   const myNotifs    = offers;
@@ -439,7 +451,7 @@ export default function HomePage({
             <Send size={16} color={C.primaryDark} /> Taklif yuborish
           </div>
           <div style={{ fontSize:11, color:C.textMuted, marginBottom:18 }}>
-            Sizning ma'lumotlaringiz mahsulot egasiga yuboriladi
+            Taklif yuborildi. Sotuvchi 5% to'lovni qilgandan keyin ma'lumotlar ochiladi.
           </div>
 
           <div style={{ display:"flex", gap:12, alignItems:"center", background:C.primaryLight,
@@ -452,13 +464,13 @@ export default function HomePage({
                 : <ImageIcon size={24} color={C.primaryBorder} style={{ opacity:0.5 }} />
               }
             </div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:800, color:C.text }}>{showOffer.name}</div>
-              <div style={{ fontSize:12, color:C.primaryDark, fontWeight:700 }}>
-                {showOffer.price?.toLocaleString()} so'm/{showOffer.unit}
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:C.text }}>{showOffer.name}</div>
+                <div style={{ fontSize:12, color:C.primaryDark, fontWeight:700 }}>
+                  {showOffer.price?.toLocaleString()} so'm/{showOffer.unit}
+                </div>
+                <div style={{ fontSize:10, color:C.textMuted }}>Mahsulot ID: #{showOffer.publicId || showOffer.id}</div>
               </div>
-              <div style={{ fontSize:10, color:C.textMuted }}>Mahsulot ID: #{showOffer.id}</div>
-            </div>
           </div>
 
           <div style={{ background:C.bg, borderRadius:14, padding:"12px 14px",
@@ -470,7 +482,7 @@ export default function HomePage({
               [User,  "Ism",       user.name],
               [Phone, "Telefon",   user.phone],
               [Send,  "Telegram",  user.telegram||"@noma'lum"],
-              [Hash,  "Mahsulot ID", `#${showOffer.id}`],
+              [Hash,  "Mahsulot ID", `#${showOffer.publicId || showOffer.id}`],
             ].map(([Icon,l,v]) => (
               <div key={l} style={{ display:"flex", justifyContent:"space-between",
                                     padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
@@ -487,7 +499,7 @@ export default function HomePage({
                         border:"1px solid #FDE68A",
                         display:"flex", alignItems:"flex-start", gap:7 }}>
             <Info size={14} color="#D97706" style={{ flexShrink:0, marginTop:1 }} />
-            Taklif yuborgandan so'ng mahsulot egasi sizga bog'lanadi. To'lov faqat operator orqali amalga oshiriladi.
+            Taklif yuborgandan so'ng mahsulot egasi (sotuvchi) narxining 5% to'lovini operator orqali qiladi. To'lovdan keyin bot orqali sotuvchining telefon/telegram/ismi sizga ochiladi.
           </div>
 
           <div style={{ display:"flex", gap:9 }}>
@@ -543,24 +555,21 @@ export default function HomePage({
                 <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:2,
                               display:"flex", alignItems:"center", gap:5 }}>
                   <Package size={12} color={C.textSub} /> {o.productName}
-                  <span style={{ color:C.textMuted, fontWeight:500 }}>(ID: #{o.productId})</span>
+                  <span style={{ color:C.textMuted, fontWeight:500 }}>(ID: #{o.productPublicId || o.productId})</span>
                 </div>
 
                 <div style={{ fontSize:11, color:C.textSub, marginBottom:10,
                               display:"flex", alignItems:"center", gap:5 }}>
-                  <User size={11} /> <b>{o.buyerName}</b> sizning mahsulotingizni olmoqchi
+                  <User size={11} /> Xaridor (ID: <b>{o.buyerPublicId || "—"}</b>)
                 </div>
 
                 {o.status==="paid" ? (
-                  <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={() => setShowBuyer(o)}
-                      style={{ flex:1, padding:"10px", borderRadius:12, border:"none",
-                               background:"linear-gradient(135deg,#28A869,#1a8f50)",
-                               color:"white", fontSize:12, fontWeight:700,
-                               cursor:"pointer", fontFamily:"inherit",
-                               display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-                      <User size={14} /> Xaridor ma'lumotlari
-                    </button>
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <div style={{ flex:1, padding:"10px", borderRadius:12,
+                                  background:"#E8F8F0", color:"#28A869",
+                                  fontSize:12, fontWeight:900 }}>
+                      ✅ To'lov qilingan
+                    </div>
                     {onDelete && (
                       <button onClick={() => onDelete(o.productId)}
                         style={{ padding:"10px 14px", borderRadius:12, border:"none",
@@ -572,14 +581,11 @@ export default function HomePage({
                     )}
                   </div>
                 ) : (
-                  <button onClick={() => setShowPayment(o)}
-                    style={{ width:"100%", padding:"10px", borderRadius:12, border:"none",
-                             background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                             color:"white", fontSize:12, fontWeight:700,
-                             cursor:"pointer", fontFamily:"inherit",
-                             display:"flex", alignItems:"center", justifyContent:"center", gap:7 }}>
-                    <CreditCard size={14} /> To'lov havolasini ko'rish
-                  </button>
+                  <div style={{ width:"100%", padding:"10px 12px", borderRadius:12,
+                                background:"#FFFBEB", border:"1px solid #FDE68A",
+                                color:"#D4920A", fontSize:12, fontWeight:900 }}>
+                    ⏳ 5% to'lov kutilmoqda (sotuvchi tasdiqlaydi)
+                  </div>
                 )}
               </div>
             ))
@@ -599,7 +605,9 @@ export default function HomePage({
                         marginBottom:14, border:`1px solid ${C.primaryBorder}` }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
               <span style={{ fontSize:11, color:C.textSub }}>Mahsulot ID</span>
-              <span style={{ fontSize:13, fontWeight:800, color:C.text }}>#{showPayment.productId}</span>
+              <span style={{ fontSize:13, fontWeight:800, color:C.text }}>
+                #{showPayment.productPublicId || showPayment.productId}
+              </span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
               <span style={{ fontSize:11, color:C.textSub }}>Mahsulot narxi</span>
@@ -639,27 +647,58 @@ export default function HomePage({
                         border:"1px solid #FDE68A" }}>
             1. Yuqoridagi kartaga <b>{Math.round(showPayment.productPrice * 0.05).toLocaleString()} so'm</b> o'tkazing<br/>
             2. To'lov chekini <b>{OPERATOR.telegram}</b> ga yuboring<br/>
-            3. Operator xaridor ma'lumotlarini sizga ochib beradi
+            3. Siz tasdiqlagandan keyin bot xaridorga sotuvchining kontaktlarini ochadi
+          </div>
+
+          {/* Qo'shimcha (ixtiyoriy) ma'lumotlar */}
+          <div style={{ marginBottom: 12 }}>
+            <Lbl>Sizning karta raqamingiz (ixtiyoriy)</Lbl>
+            <TInput
+              value={cardFrom}
+              onChange={(v) => setCardFrom(v)}
+              placeholder="8600 0000 0000 0000"
+            />
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <Lbl>Izoh (ixtiyoriy)</Lbl>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="To'lov haqida qo'shimcha ma'lumot..."
+              rows={2}
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+                border: `1.5px solid ${C.border}`,
+                borderRadius: 12,
+                padding: "10px 14px",
+                fontSize: 13,
+                resize: "none",
+                outline: "none",
+                background: C.bg,
+                fontFamily: "inherit",
+              }}
+            />
           </div>
 
           <div style={{ display:"flex", gap:9 }}>
             <BtnGhost onClick={() => setShowPayment(null)}>Yopish</BtnGhost>
-            <BtnPrimary onClick={() => confirmPayment(showPayment.id)}>
-              <Check size={15} /> To'lov tasdiqlandi (demo)
+            <BtnPrimary onClick={() => confirmPayment(showPayment.id)} disabled={paying}>
+              <Check size={15} /> {paying ? "⏳ Yuborilmoqda..." : "To'lov yuborildi va tasdiqlash"}
             </BtnPrimary>
           </div>
         </Sheet>
       )}
 
-      {/* ═══ XARIDOR MA'LUMOTI SHEET ═══ */}
+      {/* ═══ XARIDOR (ID) SHEET ═══ */}
       {showBuyer && (
         <Sheet onClose={() => setShowBuyer(null)} maxH="65vh">
           <div style={{ fontSize:16, fontWeight:800, color:C.text, marginBottom:6,
                         display:"flex", alignItems:"center", gap:7 }}>
-            <User size={16} color={C.primaryDark} /> Xaridor ma'lumotlari
+            <User size={16} color={C.primaryDark} /> To'lov qilingan
           </div>
           <div style={{ fontSize:11, color:C.textMuted, marginBottom:18 }}>
-            To'lov tasdiqlangani uchun quyidagi ma'lumotlar ochildi
+            Bot xabar yuborildi. Xaridorning shaxsiy ma'lumotlari yashirilgan.
           </div>
 
           <div style={{ background:"#E8F8F0", borderRadius:16, padding:"16px",
@@ -668,10 +707,8 @@ export default function HomePage({
               <CheckCircle size={24} color="#28A869" />
             </div>
             {[
-              [User,  "Ism",        showBuyer.buyerName],
-              [Phone, "Telefon",    showBuyer.buyerPhone],
-              [Send,  "Telegram",   showBuyer.buyerTelegram],
-              [Hash,  "Mahsulot ID",`#${showBuyer.productId}`],
+              [Hash,  "Xaridor ID", showBuyer.buyerPublicId || "—"],
+              [Hash,  "Mahsulot ID", `#${showBuyer.productPublicId || showBuyer.productId}`],
             ].map(([Icon,l,v]) => (
               <div key={l} style={{ display:"flex", justifyContent:"space-between",
                                     padding:"9px 0", borderBottom:"1px solid rgba(0,0,0,0.06)" }}>
