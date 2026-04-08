@@ -3,7 +3,7 @@ import { C } from "../constants";
 import { operatorAPI } from "../services/api";
 import {
   Search, Trash2, PlusCircle, Users, Package,
-  Loader2, ChevronLeft, Wallet,
+  Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff,
 } from "lucide-react";
 
 // ── Yordamchi komponentlar ────────────────────────────────────────
@@ -113,6 +113,26 @@ export default function OperatorPage({ onBack }) {
     }
   };
 
+  const toggleUserBlock = async (u) => {
+    try {
+      const res = await operatorAPI.setUserBlocked(u.id, !u.is_blocked);
+      setMsg(`✅ ${res.message}`);
+      load(query);
+    } catch (e) {
+      setMsg(e.message);
+    }
+  };
+
+  const toggleProductActive = async (p) => {
+    try {
+      const res = await operatorAPI.setProductActive(p.id, !p.is_active);
+      setMsg(`✅ ${res.message}`);
+      load(query);
+    } catch (e) {
+      setMsg(e.message);
+    }
+  };
+
   // Pul qo'shish
   const handleDeposit = async () => {
     const sum = Number(amount);
@@ -194,6 +214,9 @@ export default function OperatorPage({ onBack }) {
                 <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
                   {Number(u.balance).toLocaleString()} so'm
                 </div>
+                <div style={{ fontSize:10, color: u.is_blocked ? C.danger : "#28A869", fontWeight:800 }}>
+                  {u.is_blocked ? "BLOCK" : "ACTIVE"}
+                </div>
               </div>
               {/* Tugmalar */}
               <div style={{ display:"flex", gap:6, flexShrink:0 }}>
@@ -210,6 +233,16 @@ export default function OperatorPage({ onBack }) {
                     display:"flex", alignItems:"center", justifyContent:"center" }}
                   title="O'chirish">
                   <Trash2 size={15} />
+                </button>
+                <button
+                  onClick={() => toggleUserBlock(u)}
+                  style={{ width:34, height:34, borderRadius:10, border:"none",
+                    background: u.is_blocked ? "#E8F8F0" : "#FFF8E6",
+                    color: u.is_blocked ? "#28A869" : "#D4920A",
+                    cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
+                  title={u.is_blocked ? "Blokdan chiqarish" : "Bloklash"}
+                >
+                  {u.is_blocked ? <Unlock size={15} /> : <Lock size={15} />}
                 </button>
               </div>
             </div>
@@ -243,13 +276,28 @@ export default function OperatorPage({ onBack }) {
                 <div style={{ fontSize:11, color:C.textMuted }}>
                   {p.owner_name} ({p.owner_public_id || "—"}) · +998 {p.owner_phone}
                 </div>
+                <div style={{ fontSize:10, color: p.is_active ? "#28A869" : C.danger, fontWeight:800 }}>
+                  {p.is_active ? "ACTIVE" : "YOPIQ"}
+                </div>
               </div>
-              <button onClick={() => setConfirm({ type:"product", id:p.id, name:p.name })}
-                style={{ width:34, height:34, borderRadius:10, border:"none", flexShrink:0,
-                  background:C.dangerLight, color:C.danger, cursor:"pointer",
-                  display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <Trash2 size={15} />
-              </button>
+              <div style={{ display:"flex", gap:6 }}>
+                <button
+                  onClick={() => toggleProductActive(p)}
+                  style={{ width:34, height:34, borderRadius:10, border:"none", flexShrink:0,
+                    background: p.is_active ? "#FFF8E6" : "#E8F8F0",
+                    color: p.is_active ? "#D4920A" : "#28A869",
+                    cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
+                  title={p.is_active ? "Yopish" : "Ochish"}
+                >
+                  {p.is_active ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+                <button onClick={() => setConfirm({ type:"product", id:p.id, name:p.name })}
+                  style={{ width:34, height:34, borderRadius:10, border:"none", flexShrink:0,
+                    background:C.dangerLight, color:C.danger, cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
           {products.length === 0 && !loading && (

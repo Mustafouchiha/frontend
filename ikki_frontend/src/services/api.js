@@ -59,6 +59,13 @@ export const operatorAPI = {
   deleteUser: (id) =>
     apiFetch(`${BASE}/operator/users/${id}`, { method: "DELETE", headers: headers() }).then(handle),
 
+  setUserBlocked: (id, blocked) =>
+    apiFetch(`${BASE}/operator/users/${id}/block`, {
+      method: "PUT",
+      headers: headers(),
+      body: JSON.stringify({ blocked }),
+    }).then(handle),
+
   deposit: (phone, amount) =>
     apiFetch(`${BASE}/operator/deposit`, { method: "POST", headers: headers(), body: JSON.stringify({ phone, amount }) }).then(handle),
 
@@ -67,6 +74,13 @@ export const operatorAPI = {
 
   deleteProduct: (id) =>
     apiFetch(`${BASE}/operator/products/${id}`, { method: "DELETE", headers: headers() }).then(handle),
+
+  setProductActive: (id, is_active) =>
+    apiFetch(`${BASE}/operator/products/${id}/toggle`, {
+      method: "PUT",
+      headers: headers(),
+      body: JSON.stringify({ is_active }),
+    }).then(handle),
 };
 
 // ─── PRODUCTS ─────────────────────────────────────────────────────
