@@ -26,11 +26,14 @@ export default function LoginPage({ onLogin }) {
   const [mode,     setMode]     = useState("login");
   const [step,     setStep]     = useState(1);
   const [phone,    setPhone]    = useState("");
+  const [originPhone, setOriginPhone] = useState(""); // botdan kelgan asl raqam
   const [name,     setName]     = useState("");
   const [telegram, setTelegram] = useState("");
   const [code,     setCode]     = useState("");
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
+
+  const normalizePhone = (v = "") => v.replace(/\D/g, "").slice(-9);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,6 +64,7 @@ export default function LoginPage({ onLogin }) {
       // Yangi foydalanuvchi — bot orqali kelgan, avtomatik ro'yxatdan o'tish
       const digits = tgPhone.replace(/\D/g, "").slice(-9);
       const cleanName = tgName || "Foydalanuvchi";
+      setOriginPhone(digits);
       setLoading(true);
       authAPI.register({
         name: cleanName,
@@ -93,6 +97,10 @@ export default function LoginPage({ onLogin }) {
     if (!phone.trim()) { setError("Telefon raqam kiriting"); return; }
     if (mode === "register" && !name.trim()) { setError("Ism familiya kiriting"); return; }
     if (mode === "register" && !telegram.trim()) { setError("Telegram username kiriting"); return; }
+    if (mode === "register" && originPhone && normalizePhone(phone) !== originPhone) {
+      setError("Faqat o'zingizning botda yuborgan raqamingizdan ro'yxatdan o'tishingiz mumkin");
+      return;
+    }
 
     if (mode === "login") {
       // Login: Telegram'ga OTP yuborish
@@ -123,6 +131,10 @@ export default function LoginPage({ onLogin }) {
 
     if (mode === "register") {
       if (!telegram.trim()) { setError("Telegram username majburiy"); return; }
+      if (originPhone && normalizePhone(phone) !== originPhone) {
+        setError("Telefon raqam faqat o'zingizniki bo'lishi kerak");
+        return;
+      }
       // Ro'yxatdan o'tish — kod talab etilmaydi (bot orqali kelgan)
       setLoading(true);
       try {
@@ -202,17 +214,7 @@ export default function LoginPage({ onLogin }) {
             <><Lbl>Ism Familiya *</Lbl><TInput value={name} onChange={setName} placeholder="Abdulloh Karimov" /></>
           )}
           <Lbl>Telefon raqam *</Lbl>
-          {mode === "register" ? (
-            /* Ro'yxatdan o'tishda telefon qulflangan (bot orqali kelgan) */
-            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 13px",
-                          borderRadius:12, border:`1.5px solid ${C.border}`, background:"#F9F9F9",
-                          marginBottom:13, color:C.textMuted, fontSize:14 }}>
-              <span style={{ color:C.textSub, fontWeight:700, fontSize:13 }}>+998</span>
-              {phone}
-            </div>
-          ) : (
-            <PhoneInput value={phone} onChange={setPhone} onEnter={handleNextStep} />
-          )}
+          <PhoneInput value={phone} onChange={setPhone} onEnter={handleNextStep} />
           {mode === "register" && (
             <>
               <Lbl>Telegram username *</Lbl>

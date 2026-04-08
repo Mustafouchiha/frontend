@@ -2,7 +2,9 @@
 const PROD_API_FALLBACK = "https://backend-a5zy.onrender.com";
 const RAW_BASE = import.meta.env.VITE_API_URL
   || (import.meta.env.PROD ? PROD_API_FALLBACK : "");
-const BASE = RAW_BASE ? `${RAW_BASE}/api` : "/api";
+const BASE = RAW_BASE
+  ? `${RAW_BASE.replace(/\/+$/, "").replace(/\/api$/i, "")}/api`
+  : "/api";
 
 // ─── Token helpers ────────────────────────────────────────────────
 export const getToken  = ()    => localStorage.getItem("rm_token");
