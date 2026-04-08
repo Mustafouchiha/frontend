@@ -188,7 +188,9 @@ export default function OperatorPage({ onBack }) {
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                   {u.name}
                 </div>
-                <div style={{ fontSize:11, color:C.textMuted }}>+998 {u.phone}</div>
+                <div style={{ fontSize:11, color:C.textMuted }}>
+                  ID: {u.public_id || u.publicId || "—"} · +998 {u.phone}
+                </div>
                 <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
                   {Number(u.balance).toLocaleString()} so'm
                 </div>
@@ -239,7 +241,7 @@ export default function OperatorPage({ onBack }) {
                   {Number(p.price).toLocaleString()} so'm/{p.unit}
                 </div>
                 <div style={{ fontSize:11, color:C.textMuted }}>
-                  {p.owner_name} · +998 {p.owner_phone}
+                  {p.owner_name} ({p.owner_public_id || "—"}) · +998 {p.owner_phone}
                 </div>
               </div>
               <button onClick={() => setConfirm({ type:"product", id:p.id, name:p.name })}

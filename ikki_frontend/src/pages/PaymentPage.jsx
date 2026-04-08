@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { C } from "../constants";
 import { paymentsAPI, offersAPI } from "../services/api";
+import {
+  CreditCard,
+  Copy,
+  Send,
+  CheckCircle2,
+  Clock3,
+  User,
+  Phone,
+  Wallet,
+  History,
+  Package,
+  FileText,
+} from "lucide-react";
 
 // ── Karta raqamini formatlash ─────────────────────────────────────
 const fmtCard = (n = "") => n.replace(/\s/g, "").replace(/(\d{4})/g, "$1 ").trim();
@@ -127,7 +140,9 @@ export default function PaymentPage({ user }) {
         padding: "14px 16px 12px", background: C.card,
         borderBottom: `1px solid ${C.border}`, marginBottom: 0,
       }}>
-        <div style={{ fontSize: 17, fontWeight: 900, color: C.text }}>💳 To'lovlar</div>
+        <div style={{ fontSize: 17, fontWeight: 900, color: C.text, display: "flex", alignItems: "center", gap: 8 }}>
+          <CreditCard size={18} /> To'lovlar
+        </div>
       </div>
 
       {/* ── Operator karta qutisi ─────────────────────────────────── */}
@@ -145,17 +160,17 @@ export default function PaymentPage({ user }) {
           <button onClick={() => copy(opCard.card)} style={{
             background: "rgba(255,255,255,0.25)", border: "none", borderRadius: 10,
             color: "#fff", padding: "7px 16px", fontSize: 12, fontWeight: 700,
-            cursor: "pointer",
+            cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6,
           }}>
-            📋 Nusxalash
+            <Copy size={14} /> Nusxalash
           </button>
           <a href={`https://t.me/${(opCard.telegram || "remarket_operator").replace("@","")}`}
             target="_blank" rel="noopener noreferrer"
             style={{ background: "rgba(255,255,255,0.25)", borderRadius: 10,
               color: "#fff", padding: "7px 16px", fontSize: 12, fontWeight: 700,
               cursor: "pointer", textDecoration: "none",
-              display: "inline-flex", alignItems: "center" }}>
-            ✈️ Operatorga yozish
+              display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <Send size={14} /> Operatorga yozish
           </a>
         </div>
       </div>
@@ -185,7 +200,9 @@ export default function PaymentPage({ user }) {
           {paidOffers.length > 0 && (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                ✅ Sotuvchi ma'lumotlari ochildi
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <CheckCircle2 size={14} /> Sotuvchi ma'lumotlari ochildi
+                </span>
               </div>
               {paidOffers.map(o => (
                 <div key={o.id} style={{
@@ -200,13 +217,19 @@ export default function PaymentPage({ user }) {
                   </div>
 
                   <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
-                    👤 {o.sellerName}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <User size={13} /> {o.sellerName}
+                    </span>
                   </div>
                   <div style={{ fontSize: 13, color: C.textSub, marginBottom: 4 }}>
-                    📞 Telefon: +998 {o.sellerPhone}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Phone size={13} /> Telefon: +998 {o.sellerPhone}
+                    </span>
                   </div>
                   <div style={{ fontSize: 13, color: C.textSub }}>
-                    ✈️ Telegram: {o.sellerTelegram}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Send size={13} /> Telegram: {o.sellerTelegram}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -217,7 +240,9 @@ export default function PaymentPage({ user }) {
           {pendingOffers.length > 0 && (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.textSub, marginBottom: 8 }}>
-                ⏳ To'lov kutilmoqda
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Clock3 size={14} /> To'lov kutilmoqda
+                </span>
               </div>
               {pendingOffers.map(o => (
                 <div key={o.id} style={{
@@ -242,7 +267,9 @@ export default function PaymentPage({ user }) {
           {toConfirm.length > 0 && (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.textSub, marginBottom: 8, marginTop: 12 }}>
-                ✅ Tasdiqlash kerak
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <CheckCircle2 size={14} /> Tasdiqlash kerak
+                </span>
               </div>
               {toConfirm.map(o => (
                 <div key={o.id} style={{
@@ -268,7 +295,9 @@ export default function PaymentPage({ user }) {
                       fontWeight: 700, padding: "9px 0", cursor: "pointer", fontSize: 13,
                     }}
                   >
-                    💳 5% to'lovni yuborish
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Wallet size={14} /> 5% to'lovni yuborish
+                    </span>
                   </button>
                 </div>
               ))}
@@ -280,7 +309,9 @@ export default function PaymentPage({ user }) {
               textAlign: "center", padding: "40px 20px",
               color: C.textMuted, fontSize: 14,
             }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>💳</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                <CreditCard size={40} color={C.textMuted} />
+              </div>
               Kutilayotgan to'lovlar yo'q
             </div>
           )}
@@ -295,7 +326,9 @@ export default function PaymentPage({ user }) {
               textAlign: "center", padding: "40px 20px",
               color: C.textMuted, fontSize: 14,
             }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                <History size={40} color={C.textMuted} />
+              </div>
               To'lovlar tarixi bo'sh
             </div>
           ) : (
@@ -312,15 +345,21 @@ export default function PaymentPage({ user }) {
                 </div>
                 {p.card_from && (
                   <div style={{ fontSize: 12, color: C.textSub }}>
-                    Kartadan: {fmtCard(p.card_from)}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Wallet size={12} /> Kartadan: {fmtCard(p.card_from)}
+                    </span>
                   </div>
                 )}
                 <div style={{ fontSize: 12, color: C.textSub }}>
-                  Kartaga: {fmtCard(p.card_to)}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <CreditCard size={12} /> Kartaga: {fmtCard(p.card_to)}
+                  </span>
                 </div>
                 {p.note && (
                   <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4 }}>
-                    Izoh: {p.note}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <FileText size={12} /> Izoh: {p.note}
+                    </span>
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: C.textMuted, marginTop: 6 }}>
@@ -372,8 +411,9 @@ export default function PaymentPage({ user }) {
                 marginTop: 8, background: C.primaryDark, border: "none",
                 borderRadius: 8, color: "#fff", padding: "6px 14px",
                 fontSize: 12, fontWeight: 700, cursor: "pointer",
+                display: "inline-flex", alignItems: "center", gap: 6,
               }}>
-                📋 Nusxalash
+                <Copy size={13} /> Nusxalash
               </button>
             </div>
 
@@ -422,7 +462,7 @@ export default function PaymentPage({ user }) {
                 boxShadow: `0 4px 14px rgba(244,137,74,0.4)`,
               }}
             >
-              {submitting ? "Saqlanmoqda..." : "✅ To'lov yuborildi"}
+              {submitting ? "Saqlanmoqda..." : "To'lov yuborildi"}
             </button>
 
             <button

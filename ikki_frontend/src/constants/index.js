@@ -75,6 +75,6 @@ export const EMPTY_FORM = { name:"", category:"g'isht", price:"", unit:"dona", q
 // Operator ma'lumotlari (real app da backenddan keladi)
 export const OPERATOR = {
   telegram: "@Requrilish_admin",
-  card:     "8600 1234 5678 9012",
+  card:     "9860 1606 1973 1286",
   name:     "Mustafo Ismoiljonov",
 };

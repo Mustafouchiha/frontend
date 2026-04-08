@@ -268,6 +268,7 @@ export default function App() {
             setHomeAction={setHomeAction}
             onProductAdded={handleAddProduct}
             onDelete={handleDeleteProduct}
+            isOperator={isOperator(user)}
             loggedIn={true}
             onRequireAuth={() => setNav("login")}
           />

@@ -18,7 +18,7 @@ import {
 export default function HomePage({
   user, products, setProducts, offers, setOffers,
   onNavChange, homeAction, setHomeAction,
-  onProductAdded, onDelete, loggedIn, onRequireAuth,
+  onProductAdded, onDelete, isOperator = false, loggedIn, onRequireAuth,
 }) {
   const [search,     setSearch]     = useState("");
   const [activeCats, setActiveCats] = useState([]);
@@ -437,6 +437,34 @@ export default function HomePage({
           {selected.ownerId === user.id && (
             <div style={{ marginTop:10, display:"flex", justifyContent:"center" }}>
               <BtnGhost onClick={() => setSelected(null)}>Yopish</BtnGhost>
+            </div>
+          )}
+
+          {/* Operator: bosh sahifadan ham mahsulotni o'chirish */}
+          {isOperator && onDelete && (
+            <div style={{ marginTop:10, display:"flex", justifyContent:"center" }}>
+              <button
+                onClick={async () => {
+                  await onDelete(selected.id);
+                  setSelected(null);
+                }}
+                style={{
+                  padding:"10px 14px",
+                  borderRadius:12,
+                  border:"none",
+                  background:"#FFF1F0",
+                  color:"#FF4D4F",
+                  fontSize:12,
+                  fontWeight:800,
+                  cursor:"pointer",
+                  fontFamily:"inherit",
+                  display:"inline-flex",
+                  alignItems:"center",
+                  gap:6,
+                }}
+              >
+                <Trash2 size={14} /> Operator o'chirish
+              </button>
             </div>
           )}
         </Sheet>
