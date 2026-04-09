@@ -9,7 +9,12 @@ import { getToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services
 import { Home, Plus } from "lucide-react";
 
 const OPERATOR_PHONES = ["331350206"];
-const isOperator = (user) => user && OPERATOR_PHONES.includes(user.phone);
+const phoneCore = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.startsWith("998") ? digits.slice(-9) : digits.slice(-9);
+};
+const isOperator = (user) => user && OPERATOR_PHONES.includes(phoneCore(user.phone));
 
 // Saved user from localStorage (for instant load without flicker)
 const savedUser = () => {

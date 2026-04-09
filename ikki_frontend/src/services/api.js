@@ -72,6 +72,9 @@ export const operatorAPI = {
   deposit: (phone, amount) =>
     apiFetch(`${BASE}/operator/deposit`, { method: "POST", headers: headers(), body: JSON.stringify({ phone, amount }) }).then(handle),
 
+  withdraw: (phone, amount) =>
+    apiFetch(`${BASE}/operator/withdraw`, { method: "POST", headers: headers(), body: JSON.stringify({ phone, amount }) }).then(handle),
+
   getProducts: (q = "") =>
     apiFetch(`${BASE}/operator/products${q ? "?q=" + encodeURIComponent(q) : ""}`, { headers: headers() }).then(handle),
 

@@ -2,9 +2,21 @@ import { useState, useEffect } from "react";
 import { C } from "../constants";
 import { operatorAPI } from "../services/api";
 import {
-  Search, Trash2, PlusCircle, Users, Package,
+  Search, Trash2, PlusCircle, MinusCircle, Users, Package,
   Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff,
 } from "lucide-react";
+
+const phoneCore = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.startsWith("998") ? digits.slice(-9) : digits.slice(-9);
+};
+
+const formatUzPhone = (value) => {
+  const core = phoneCore(value);
+  if (core.length !== 9) return value || "—";
+  return `+998 ${core.slice(0, 2)} ${core.slice(2, 5)} ${core.slice(5, 7)} ${core.slice(7, 9)}`;
+};
 
 // ── Yordamchi komponentlar ────────────────────────────────────────
 function TabBar({ active, onChange }) {
@@ -69,7 +81,7 @@ export default function OperatorPage({ onBack }) {
   const [products,   setProducts]  = useState([]);
   const [loading,    setLoading]   = useState(false);
   const [confirm,    setConfirm]   = useState(null); // { type, id, name }
-  const [deposit,    setDeposit]   = useState(null); // { phone, name }
+  const [deposit,    setDeposit]   = useState(null); // { phone, name, mode: 'add'|'withdraw' }
   const [amount,     setAmount]    = useState("");
   const [msg,        setMsg]       = useState("");
 
@@ -133,12 +145,15 @@ export default function OperatorPage({ onBack }) {
     }
   };
 
-  // Pul qo'shish
+  // Pul qo'shish / yechish
   const handleDeposit = async () => {
     const sum = Number(amount);
     if (!sum || sum <= 0) { setMsg("Summa kiriting"); return; }
     try {
-      const res = await operatorAPI.deposit(deposit.phone, sum);
+      const res =
+        deposit.mode === "withdraw"
+          ? await operatorAPI.withdraw(deposit.phone, sum)
+          : await operatorAPI.deposit(deposit.phone, sum);
       setMsg(`✅ ${res.message}`);
       setDeposit(null);
       setAmount("");
@@ -209,7 +224,7 @@ export default function OperatorPage({ onBack }) {
                   {u.name}
                 </div>
                 <div style={{ fontSize:11, color:C.textMuted }}>
-                  ID: {u.public_id || u.publicId || "—"} · +998 {u.phone}
+                  ID: {u.public_id || u.publicId || "—"} · {formatUzPhone(u.phone)}
                 </div>
                 <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
                   {Number(u.balance).toLocaleString()} so'm
@@ -220,12 +235,19 @@ export default function OperatorPage({ onBack }) {
               </div>
               {/* Tugmalar */}
               <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-                <button onClick={() => { setDeposit({ phone: u.phone, name: u.name }); setAmount(""); setMsg(""); }}
+                <button onClick={() => { setDeposit({ phone: u.phone, name: u.name, mode: "add" }); setAmount(""); setMsg(""); }}
                   style={{ width:34, height:34, borderRadius:10, border:"none",
                     background:"#E8F8F0", color:"#28A869", cursor:"pointer",
                     display:"flex", alignItems:"center", justifyContent:"center" }}
                   title="Pul qo'shish">
                   <PlusCircle size={16} />
+                </button>
+                <button onClick={() => { setDeposit({ phone: u.phone, name: u.name, mode: "withdraw" }); setAmount(""); setMsg(""); }}
+                  style={{ width:34, height:34, borderRadius:10, border:"none",
+                    background:"#FFF1F0", color:"#FF4D4F", cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center" }}
+                  title="Balansdan yechish">
+                  <MinusCircle size={16} />
                 </button>
                 <button onClick={() => setConfirm({ type:"user", id:u.id, name:u.name })}
                   style={{ width:34, height:34, borderRadius:10, border:"none",
@@ -274,7 +296,7 @@ export default function OperatorPage({ onBack }) {
                   {Number(p.price).toLocaleString()} so'm/{p.unit}
                 </div>
                 <div style={{ fontSize:11, color:C.textMuted }}>
-                  {p.owner_name} ({p.owner_public_id || "—"}) · +998 {p.owner_phone}
+                  {p.owner_name} ({p.owner_public_id || "—"}) · {formatUzPhone(p.owner_phone)}
                 </div>
                 <div style={{ fontSize:10, color: p.is_active ? "#28A869" : C.danger, fontWeight:800 }}>
                   {p.is_active ? "ACTIVE" : "YOPIQ"}
@@ -314,10 +336,10 @@ export default function OperatorPage({ onBack }) {
           display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
           <div style={{ background:C.card, borderRadius:20, padding:"24px 20px", width:"100%", maxWidth:340 }}>
             <div style={{ fontSize:15, fontWeight:800, color:C.text, marginBottom:4 }}>
-              💰 Pul qo'shish
+              {deposit.mode === "withdraw" ? "💸 Balansdan yechish" : "💰 Pul qo'shish"}
             </div>
             <div style={{ fontSize:12, color:C.textMuted, marginBottom:16 }}>
-              {deposit.name} · +998 {deposit.phone}
+              {deposit.name} · {formatUzPhone(deposit.phone)}
             </div>
             <input
               value={amount}
@@ -343,10 +365,12 @@ export default function OperatorPage({ onBack }) {
               </button>
               <button onClick={handleDeposit} style={{ flex:1, padding:"11px",
                 borderRadius:12, border:"none",
-                background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                background: deposit.mode === "withdraw"
+                  ? "linear-gradient(135deg,#FF6B6B,#FF4D4F)"
+                  : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                 color:"white", cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:700 }}>
                 <Wallet size={14} style={{ verticalAlign:"middle", marginRight:4 }} />
-                Qo'shish
+                {deposit.mode === "withdraw" ? "Yechish" : "Qo'shish"}
               </button>
             </div>
           </div>
