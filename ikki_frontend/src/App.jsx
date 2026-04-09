@@ -19,7 +19,8 @@ const savedUser = () => {
 
 function hasTgParams() {
   const p = new URLSearchParams(window.location.search);
-  return p.has("tgToken") || p.get("register") === "1";
+  // register=1 bo'lsa ham mehmon rejimda postlarni ko'rish mumkin bo'lsin.
+  return p.has("tgToken");
 }
 
 export default function App() {
