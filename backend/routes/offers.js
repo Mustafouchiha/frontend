@@ -21,8 +21,12 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 
     const product = await Product.findById(productId);
-    if (!product || !product.is_active) {
-      return res.status(404).json({ message: "Mahsulot topilmadi" });
+    if (!product || product.status !== "active") {
+      return res.status(404).json({ message: "Mahsulot topilmadi yoki faol emas" });
+    }
+
+    if (!product.owner_id) {
+      return res.status(400).json({ message: "Bu mahsulotning egasi yo'q, taklif yuborib bo'lmaydi" });
     }
 
     if (product.owner_id === req.user.id) {

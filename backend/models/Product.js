@@ -17,16 +17,20 @@ const Product = {
     const values = [];
     let i = 1;
 
-    conditions.push(`p.is_active = TRUE`);
-
-    if (filter.owner_ne) {
-      conditions.push(`p.owner_id != $${i++}`);
-      values.push(filter.owner_ne);
-    }
     if (filter.owner_id) {
+      // Egasi o'z postlarini ko'radi: o'chirilganlardan tashqari barchasi
+      conditions.push(`p.status != 'deleted'`);
       conditions.push(`p.owner_id = $${i++}`);
       values.push(filter.owner_id);
+    } else {
+      // Ommaviy feed: faqat faol postlar
+      conditions.push(`p.status = 'active'`);
+      if (filter.owner_ne) {
+        conditions.push(`(p.owner_id != $${i++} OR p.owner_id IS NULL)`);
+        values.push(filter.owner_ne);
+      }
     }
+
     if (filter.category) {
       conditions.push(`p.category = $${i++}`);
       values.push(filter.category);
@@ -57,7 +61,7 @@ const Product = {
               u.telegram AS owner_telegram,
               u.avatar AS owner_avatar
        FROM products p
-       JOIN users u ON u.id = p.owner_id
+       LEFT JOIN users u ON u.id = p.owner_id
        ${where}
        ORDER BY p.created_at DESC`,
       values
@@ -68,7 +72,7 @@ const Product = {
   async findById(id) {
     const { rows } = await query(
       `SELECT p.*, u.id AS owner_uuid, u.name AS owner_name, u.phone AS owner_phone
-       FROM products p JOIN users u ON u.id = p.owner_id
+       FROM products p LEFT JOIN users u ON u.id = p.owner_id
        WHERE p.id = $1 LIMIT 1`,
       [id]
     );
@@ -85,10 +89,11 @@ const Product = {
 
   async create(data) {
     const public_id = await this._generatePublicId();
+    const status = data.status || "active";
     const { rows } = await query(
       `INSERT INTO products
-         (public_id, name, category, price, unit, qty, condition, viloyat, tuman, photo, photos, owner_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         (public_id, name, category, price, unit, qty, condition, viloyat, tuman, photo, photos, owner_id, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING *`,
       [
         public_id,
@@ -103,27 +108,71 @@ const Product = {
         data.photo || null,
         data.photos || null,
         data.owner_id,
+        status,
       ]
     );
     return rows[0];
   },
 
+  // Foydalanuvchi o'z postini tahrirlaydi (owner_id tekshiradi)
   async update(id, owner_id, fields) {
     const sets = [];
     const values = [];
     let i = 1;
-    const allowed = ["name","category","price","unit","qty","condition","viloyat","tuman","photo","photos","is_active"];
+    const allowed = [
+      "name", "category", "price", "unit", "qty", "condition",
+      "viloyat", "tuman", "photo", "photos", "is_active", "status",
+    ];
     for (const [k, v] of Object.entries(fields)) {
       if (allowed.includes(k)) {
         sets.push(`${k} = $${i++}`);
         values.push(v);
       }
     }
+    if (sets.length === 0) return null;
     sets.push(`updated_at = NOW()`);
     values.push(id, owner_id);
     const { rows } = await query(
       `UPDATE products SET ${sets.join(", ")} WHERE id = $${i++} AND owner_id = $${i} RETURNING *`,
       values
+    );
+    return rows[0] || null;
+  },
+
+  // Operator: owner_id tekshirmasdan yangilaydi
+  async adminUpdate(id, fields) {
+    const sets = [];
+    const values = [];
+    let i = 1;
+    const allowed = [
+      "name", "category", "price", "unit", "qty", "condition",
+      "viloyat", "tuman", "photo", "photos", "is_active", "status",
+    ];
+    for (const [k, v] of Object.entries(fields)) {
+      if (allowed.includes(k)) {
+        sets.push(`${k} = $${i++}`);
+        values.push(v);
+      }
+    }
+    if (sets.length === 0) return null;
+    sets.push(`updated_at = NOW()`);
+    values.push(id);
+    const { rows } = await query(
+      `UPDATE products SET ${sets.join(", ")} WHERE id = $${i} RETURNING *`,
+      values
+    );
+    return rows[0] || null;
+  },
+
+  // Post holatini yangilash (operator uchun)
+  async updateStatus(id, status) {
+    const validStatuses = ["active", "hidden", "deleted", "pending_payment"];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Noto'g'ri status: ${status}`);
+    }
+    const { rows } = await query(
+      `UPDATE products SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [status, id]
     );
     return rows[0] || null;
   },

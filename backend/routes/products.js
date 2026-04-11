@@ -5,7 +5,9 @@ const optionalAuth = require("../middleware/optionalAuth");
 
 const router = express.Router();
 
-// GET /api/products — barchaning mahsulotlari (o'zinikidan tashqari)
+const PAYMENT_ENABLED = process.env.PAYMENT_ENABLED === "true";
+
+// GET /api/products — barchaning mahsulotlari (o'zinikidan tashqari, faqat active)
 // query: ?category=&viloyat=&tuman=&search=
 router.get("/", optionalAuth, async (req, res) => {
   try {
@@ -19,11 +21,10 @@ router.get("/", optionalAuth, async (req, res) => {
     if (search)  filter.search  = search;
 
     const products = await Product.find(filter);
-    const loggedIn = !!req.user?.id;
 
     const formatted = products.map((p) => ({
       id:           p.id,
-      publicId:    p.public_id,
+      publicId:     p.public_id,
       name:         p.name,
       category:     p.category,
       price:        Number(p.price),
@@ -35,10 +36,10 @@ router.get("/", optionalAuth, async (req, res) => {
       photo:        p.photo,
       photos:       p.photos ? JSON.parse(p.photos) : (p.photo ? [p.photo] : []),
       ownerId:      p.owner_id,
-      // Shaxsiy kontaktlar faqat to'lovdan keyin ochiladi (API javobida bermaymiz).
-      ownerName:    null,
+      ownerName:    null,   // kontaktlar faqat to'lovdan keyin ochiladi
       ownerPhone:   null,
       ownerTelegram: null,
+      status:       p.status,
       createdAt:    p.created_at,
     }));
 
@@ -48,14 +49,14 @@ router.get("/", optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/products/my — faqat o'z mahsulotlari
+// GET /api/products/my — faqat o'z mahsulotlari (barcha holatlari)
 router.get("/my", authMiddleware, async (req, res) => {
   try {
     const products = await Product.find({ owner_id: req.user.id });
 
     const formatted = products.map((p) => ({
       id:        p.id,
-      publicId: p.public_id,
+      publicId:  p.public_id,
       name:      p.name,
       category:  p.category,
       price:     Number(p.price),
@@ -67,6 +68,7 @@ router.get("/my", authMiddleware, async (req, res) => {
       photo:     p.photo,
       photos:    p.photos ? JSON.parse(p.photos) : (p.photo ? [p.photo] : []),
       ownerId:   p.owner_id,
+      status:    p.status,
       createdAt: p.created_at,
     }));
 
@@ -93,6 +95,9 @@ router.post("/", authMiddleware, async (req, res) => {
       ? JSON.stringify(photos)
       : (photo ? JSON.stringify([photo]) : null);
 
+    // To'lov yoqilgan bo'lsa → post to'lov kutishda boshlanadi
+    const initialStatus = PAYMENT_ENABLED ? "pending_payment" : "active";
+
     const product = await Product.create({
       name,
       category:  category  || "boshqa",
@@ -105,13 +110,14 @@ router.post("/", authMiddleware, async (req, res) => {
       photo:     photo || (Array.isArray(photos) ? photos[0] : null) || null,
       photos:    photosJson,
       owner_id:  req.user.id,
+      status:    initialStatus,
     });
 
     const parsedPhotos = product.photos ? JSON.parse(product.photos) : (product.photo ? [product.photo] : []);
 
     res.status(201).json({
       id:        product.id,
-      publicId: product.public_id,
+      publicId:  product.public_id,
       name:      product.name,
       category:  product.category,
       price:     Number(product.price),
@@ -124,6 +130,7 @@ router.post("/", authMiddleware, async (req, res) => {
       photos:    parsedPhotos,
       ownerId:   product.owner_id,
       ownerName: req.user.name,
+      status:    product.status,
       createdAt: product.created_at,
     });
   } catch (err) {
@@ -131,11 +138,11 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// PUT /api/products/:id — mahsulotni yangilash
+// PUT /api/products/:id — mahsulotni yangilash (faqat o'ziniki)
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const fields = {};
-    const allowed = ["name","category","price","unit","qty","condition","viloyat","tuman","photo"];
+    const allowed = ["name", "category", "price", "unit", "qty", "condition", "viloyat", "tuman", "photo", "photos"];
     for (const f of allowed) {
       if (req.body[f] !== undefined) fields[f] = req.body[f];
     }
@@ -151,10 +158,10 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE /api/products/:id — soft delete
+// DELETE /api/products/:id — o'z postini o'chirish (soft delete → status = deleted)
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const updated = await Product.update(req.params.id, req.user.id, { is_active: false });
+    const updated = await Product.update(req.params.id, req.user.id, { status: "deleted" });
     if (!updated) {
       return res.status(404).json({ message: "Mahsulot topilmadi yoki ruxsat yo'q" });
     }

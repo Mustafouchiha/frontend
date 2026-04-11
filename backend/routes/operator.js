@@ -3,9 +3,14 @@ const { query } = require("../db");
 const { connect } = require("../db");
 const operatorAuth = require("../middleware/operatorAuth");
 const User = require("../models/User");
+const Product = require("../models/Product");
 
 const router = express.Router();
 
+// Barcha route larda operator tekshiruvi
+router.use(operatorAuth);
+
+// ─── YORDAMCHI ──────────────────────────────────────────────────────
 async function findUserByPhoneOrPublicId(phone) {
   const raw = String(phone).trim();
   const normalizedPhone = raw.replace(/\D/g, "").slice(-9);
@@ -16,8 +21,16 @@ async function findUserByPhoneOrPublicId(phone) {
   return rows[0] || null;
 }
 
-// Barcha route larda operator tekshiruvi
-router.use(operatorAuth);
+async function notifyUserIfConnected(user, text) {
+  if (!user?.tg_chat_id) return { notified: false, note: "Foydalanuvchida tg_chat_id yo'q" };
+  try {
+    const { notifyUser } = require("../bot");
+    await notifyUser(user.tg_chat_id, text, { parse_mode: "Markdown" });
+    return { notified: true, note: "" };
+  } catch (e) {
+    return { notified: false, note: `Bot xabar yuborilmadi: ${e.message}` };
+  }
+}
 
 // ── Foydalanuvchilarni qidirish ────────────────────────────────────
 // GET /api/operator/users?q=telefon_yoki_ism_yoki_id
@@ -27,9 +40,9 @@ router.get("/users", async (req, res) => {
     let rows;
 
     if (!q) {
-      // So'nggi 50 ta foydalanuvchi
       ({ rows } = await query(
-        "SELECT id, public_id, name, phone, telegram, is_blocked, balance, tg_chat_id, joined FROM users ORDER BY joined DESC LIMIT 50"
+        `SELECT id, public_id, name, phone, telegram, is_blocked, balance, tg_chat_id, joined
+         FROM users ORDER BY joined DESC LIMIT 50`
       ));
     } else {
       ({ rows } = await query(
@@ -66,27 +79,13 @@ router.post("/deposit", async (req, res) => {
       [sum, foundUser.id]
     );
 
-    // Foydalanuvchiga Telegram xabari
-    let botNotified = false;
-    let botNote = "";
-    if (foundUser.tg_chat_id) {
-      try {
-        const { notifyUser } = require("../bot");
-        await notifyUser(
-          foundUser.tg_chat_id,
-          `💰 *Hisobingiz to'ldirildi!*\n\n` +
-          `➕ Qo'shilgan summa: *${sum.toLocaleString()} so'm*\n` +
-          `💼 Joriy balans: *${Number(rows[0].balance).toLocaleString()} so'm*\n\n` +
-          `✅ Operator: *Mustafo Ismoiljonov*`,
-          { parse_mode: "Markdown" }
-        );
-        botNotified = true;
-      } catch (e) {
-        botNote = `Bot xabar yuborilmadi: ${e.message}`;
-      }
-    } else {
-      botNote = "Foydalanuvchida tg_chat_id yo'q (botga ulanmagan)";
-    }
+    const { notified: botNotified, note: botNote } = await notifyUserIfConnected(
+      foundUser,
+      `💰 *Hisobingiz to'ldirildi!*\n\n` +
+      `➕ Qo'shilgan summa: *${sum.toLocaleString()} so'm*\n` +
+      `💼 Joriy balans: *${Number(rows[0].balance).toLocaleString()} so'm*\n\n` +
+      `✅ Operator: *Mustafo Ismoiljonov*`
+    );
 
     res.json({
       message: `${sum.toLocaleString()} so'm qo'shildi`,
@@ -99,7 +98,7 @@ router.post("/deposit", async (req, res) => {
   }
 });
 
-// ── Foydalanuvchidan balansdan yechish (operator) ─────────────────
+// ── Foydalanuvchidan balansdan yechish ─────────────────────────────
 // POST /api/operator/withdraw  { phone, amount }
 router.post("/withdraw", async (req, res) => {
   try {
@@ -121,26 +120,13 @@ router.post("/withdraw", async (req, res) => {
       return res.status(400).json({ message: e.message || "Balansdan yechib bo'lmadi" });
     }
 
-    let botNotified = false;
-    let botNote = "";
-    if (foundUser.tg_chat_id) {
-      try {
-        const { notifyUser } = require("../bot");
-        await notifyUser(
-          foundUser.tg_chat_id,
-          `💸 *Hisobingizdan yechildi*\n\n` +
-          `➖ Yechilgan: *${sum.toLocaleString()} so'm*\n` +
-          `💼 Joriy balans: *${Number(updatedUser.balance).toLocaleString()} so'm*\n\n` +
-          `ℹ️ Operator: *Mustafo Ismoiljonov*`,
-          { parse_mode: "Markdown" }
-        );
-        botNotified = true;
-      } catch (e) {
-        botNote = `Bot xabar yuborilmadi: ${e.message}`;
-      }
-    } else {
-      botNote = "Foydalanuvchida tg_chat_id yo'q (botga ulanmagan)";
-    }
+    const { notified: botNotified, note: botNote } = await notifyUserIfConnected(
+      foundUser,
+      `💸 *Hisobingizdan yechildi*\n\n` +
+      `➖ Yechilgan: *${sum.toLocaleString()} so'm*\n` +
+      `💼 Joriy balans: *${Number(updatedUser.balance).toLocaleString()} so'm*\n\n` +
+      `ℹ️ Operator: *Mustafo Ismoiljonov*`
+    );
 
     res.json({
       message: `${sum.toLocaleString()} so'm balansdan yechildi`,
@@ -160,6 +146,7 @@ router.post("/withdraw", async (req, res) => {
 
 // ── Foydalanuvchini o'chirish ─────────────────────────────────────
 // DELETE /api/operator/users/:id
+// Foydalanuvchi o'chirilganda uning postlari SAQLANIB qoladi (owner_id = NULL, status = active)
 router.delete("/users/:id", async (req, res) => {
   const pool = await connect();
   const client = await pool.connect();
@@ -167,34 +154,38 @@ router.delete("/users/:id", async (req, res) => {
     const { id } = req.params;
     if (!id) return res.status(400).json({ message: "id majburiy" });
 
-    // Operator o'zini o'chira olmaydi
-    if (id === req.user.id) return res.status(400).json({ message: "O'zingizni o'chira olmaysiz" });
+    if (id === req.user.id) {
+      return res.status(400).json({ message: "O'zingizni o'chira olmaysiz" });
+    }
 
     await client.query("BEGIN");
 
-    // FK tartibi: payments -> offers -> products -> users
-    // (products.owner_id users ga bog'langan — faqat yopib qolinsa user o'chmaydi)
+    // 1. Ushbu foydalanuvchiga bog'liq to'lovlarni o'chirish
     await client.query(
       `DELETE FROM payments
        WHERE offer_id IN (
          SELECT o.id FROM offers o
          WHERE o.buyer_id = $1
             OR o.seller_id = $1
-            OR o.product_id IN (SELECT p.id FROM products p WHERE p.owner_id = $1)
        )`,
       [id]
     );
 
+    // 2. Takliflarni o'chirish (ushbu foydalanuvchi buyer yoki seller sifatida)
     await client.query(
-      `DELETE FROM offers
-       WHERE buyer_id = $1
-          OR seller_id = $1
-          OR product_id IN (SELECT id FROM products WHERE owner_id = $1)`,
+      `DELETE FROM offers WHERE buyer_id = $1 OR seller_id = $1`,
       [id]
     );
 
-    await client.query("DELETE FROM products WHERE owner_id = $1", [id]);
+    // 3. Foydalanuvchining postlarini saqlash: ega yo'q, lekin active holda ko'rinadi
+    await client.query(
+      `UPDATE products
+       SET owner_id = NULL, status = 'active', updated_at = NOW()
+       WHERE owner_id = $1`,
+      [id]
+    );
 
+    // 4. Foydalanuvchini o'chirish
     const del = await client.query("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
     if (!del.rows[0]) {
       await client.query("ROLLBACK");
@@ -202,7 +193,7 @@ router.delete("/users/:id", async (req, res) => {
     }
 
     await client.query("COMMIT");
-    res.json({ message: "Foydalanuvchi, e'lonlari va bog'liq taklif/to'lovlar o'chirildi" });
+    res.json({ message: "Foydalanuvchi o'chirildi. Postlari saqlandi (egasiz aktiv holatda)" });
   } catch (err) {
     try { await client.query("ROLLBACK"); } catch {}
     res.status(500).json({ message: err.message });
@@ -247,17 +238,19 @@ router.get("/products", async (req, res) => {
     if (!q) {
       ({ rows } = await query(
         `SELECT p.id, p.public_id, p.name, p.price, p.unit, p.qty, p.category, p.viloyat,
-                p.is_active,
-                u.name AS owner_name, u.phone AS owner_phone, u.public_id AS owner_public_id, p.created_at
-         FROM products p JOIN users u ON p.owner_id = u.id
+                p.status, p.is_active,
+                u.name AS owner_name, u.phone AS owner_phone,
+                u.public_id AS owner_public_id, p.created_at
+         FROM products p LEFT JOIN users u ON p.owner_id = u.id
          ORDER BY p.created_at DESC LIMIT 50`
       ));
     } else {
       ({ rows } = await query(
         `SELECT p.id, p.public_id, p.name, p.price, p.unit, p.qty, p.category, p.viloyat,
-                p.is_active,
-                u.name AS owner_name, u.phone AS owner_phone, u.public_id AS owner_public_id, p.created_at
-         FROM products p JOIN users u ON p.owner_id = u.id
+                p.status, p.is_active,
+                u.name AS owner_name, u.phone AS owner_phone,
+                u.public_id AS owner_public_id, p.created_at
+         FROM products p LEFT JOIN users u ON p.owner_id = u.id
          WHERE (
              p.name ILIKE $1 OR p.id::text ILIKE $1 OR p.public_id ILIKE $1
              OR u.phone ILIKE $1 OR u.name ILIKE $1 OR u.public_id ILIKE $1
@@ -273,33 +266,92 @@ router.get("/products", async (req, res) => {
   }
 });
 
-// ── Mahsulotni o'chirish ──────────────────────────────────────────
+// ── Mahsulotni o'chirish (status = deleted) ───────────────────────
 // DELETE /api/operator/products/:id
 router.delete("/products/:id", async (req, res) => {
   try {
-    await query("UPDATE products SET is_active = false WHERE id = $1", [req.params.id]);
-    res.json({ message: "Mahsulot o'chirildi" });
+    const product = await Product.updateStatus(req.params.id, "deleted");
+    if (!product) return res.status(404).json({ message: "Mahsulot topilmadi" });
+    res.json({ message: "Mahsulot o'chirildi", product: { id: product.id, status: product.status } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// ── Mahsulotni ochish/yopish ─────────────────────────────────────
+// ── Mahsulotni yashirish (status = hidden) ────────────────────────
+// PUT /api/operator/products/:id/hide
+router.put("/products/:id/hide", async (req, res) => {
+  try {
+    const product = await Product.updateStatus(req.params.id, "hidden");
+    if (!product) return res.status(404).json({ message: "Mahsulot topilmadi" });
+    res.json({ message: "Mahsulot yashirildi", product: { id: product.id, status: product.status } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Mahsulotni ochish (status = active) ──────────────────────────
+// PUT /api/operator/products/:id/show
+router.put("/products/:id/show", async (req, res) => {
+  try {
+    const product = await Product.updateStatus(req.params.id, "active");
+    if (!product) return res.status(404).json({ message: "Mahsulot topilmadi" });
+    res.json({ message: "Mahsulot ochildi", product: { id: product.id, status: product.status } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── To'lovni tasdiqlash va postni ochish (status = active) ────────
+// PUT /api/operator/products/:id/approve
+router.put("/products/:id/approve", async (req, res) => {
+  try {
+    const product = await Product.updateStatus(req.params.id, "active");
+    if (!product) return res.status(404).json({ message: "Mahsulot topilmadi" });
+
+    // Post egasiga xabar yuborish
+    if (product.owner_id) {
+      const owner = await User.findById(product.owner_id);
+      await notifyUserIfConnected(
+        owner,
+        `✅ *E'loningiz tasdiqlandi!*\n\n` +
+        `📦 Mahsulot: *${product.name}*\n` +
+        `🔓 Endi e'loningiz hammaga ko'rinadi.`
+      );
+    }
+
+    res.json({
+      message: "To'lov tasdiqlandi, post ochildi",
+      product: { id: product.id, status: product.status },
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Mahsulotni ochish/yopish (toggle: active ↔ hidden) ───────────
 // PUT /api/operator/products/:id/toggle { is_active: true|false }
+// Orqaga moslik uchun saqlanadi
 router.put("/products/:id/toggle", async (req, res) => {
   try {
-    const active = Boolean(req.body.is_active);
-    const { rows } = await query(
-      `UPDATE products
-       SET is_active = $1, updated_at = NOW()
-       WHERE id = $2
-       RETURNING id, public_id, name, is_active`,
-      [active, req.params.id]
+    const { rows: current } = await query(
+      "SELECT status FROM products WHERE id = $1",
+      [req.params.id]
     );
-    if (!rows[0]) return res.status(404).json({ message: "Mahsulot topilmadi" });
+    if (!current[0]) return res.status(404).json({ message: "Mahsulot topilmadi" });
+
+    // Agar is_active berilgan bo'lsa, undan foydalanish; aks holda toggle
+    let newStatus;
+    if (req.body.is_active !== undefined) {
+      newStatus = req.body.is_active ? "active" : "hidden";
+    } else {
+      newStatus = current[0].status === "active" ? "hidden" : "active";
+    }
+
+    const product = await Product.updateStatus(req.params.id, newStatus);
     res.json({
-      message: active ? "Mahsulot ochildi" : "Mahsulot yopildi",
-      product: rows[0],
+      message: newStatus === "active" ? "Mahsulot ochildi" : "Mahsulot yashirildi",
+      product: { id: product.id, status: product.status, is_active: product.status === "active" },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

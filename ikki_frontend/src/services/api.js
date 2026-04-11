@@ -78,9 +78,23 @@ export const operatorAPI = {
   getProducts: (q = "") =>
     apiFetch(`${BASE}/operator/products${q ? "?q=" + encodeURIComponent(q) : ""}`, { headers: headers() }).then(handle),
 
+  // status = 'deleted' (soft delete)
   deleteProduct: (id) =>
     apiFetch(`${BASE}/operator/products/${id}`, { method: "DELETE", headers: headers() }).then(handle),
 
+  // status = 'hidden'
+  hideProduct: (id) =>
+    apiFetch(`${BASE}/operator/products/${id}/hide`, { method: "PUT", headers: headers() }).then(handle),
+
+  // status = 'active'
+  showProduct: (id) =>
+    apiFetch(`${BASE}/operator/products/${id}/show`, { method: "PUT", headers: headers() }).then(handle),
+
+  // To'lov tasdiqlanib, post ochiladi (pending_payment → active)
+  approveProduct: (id) =>
+    apiFetch(`${BASE}/operator/products/${id}/approve`, { method: "PUT", headers: headers() }).then(handle),
+
+  // Orqaga moslik uchun saqlanadi
   setProductActive: (id, is_active) =>
     apiFetch(`${BASE}/operator/products/${id}/toggle`, {
       method: "PUT",

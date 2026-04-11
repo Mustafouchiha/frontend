@@ -210,7 +210,34 @@ async function initTables(p) {
       END IF;
     END $$;
 
+    -- Post holati: active | hidden | deleted | pending_payment
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'products' AND column_name = 'status'
+      ) THEN
+        ALTER TABLE products ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'active';
+        -- Mavjud yopiq postlarni to'g'ri holat bilan yangilash
+        UPDATE products SET status = 'deleted' WHERE is_active = FALSE;
+      END IF;
+    END $$;
+
+    -- owner_id NOT NULL cheklovini olib tashlash (foydalanuvchi o'chirilsa ham post qoladi)
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'products'
+          AND column_name = 'owner_id'
+          AND is_nullable = 'NO'
+      ) THEN
+        ALTER TABLE products ALTER COLUMN owner_id DROP NOT NULL;
+      END IF;
+    END $$;
+
     CREATE INDEX IF NOT EXISTS idx_products_active_created ON products (is_active, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_products_status ON products (status, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_products_owner ON products (owner_id);
     CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
     CREATE INDEX IF NOT EXISTS idx_offers_buyer ON offers (buyer_id);

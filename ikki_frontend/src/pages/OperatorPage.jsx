@@ -3,7 +3,7 @@ import { C } from "../constants";
 import { operatorAPI } from "../services/api";
 import {
   Search, Trash2, PlusCircle, MinusCircle, Users, Package,
-  Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff,
+  Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff, CheckCircle,
 } from "lucide-react";
 
 const phoneCore = (value) => {
@@ -17,6 +17,26 @@ const formatUzPhone = (value) => {
   if (core.length !== 9) return value || "—";
   return `+998 ${core.slice(0, 2)} ${core.slice(2, 5)} ${core.slice(5, 7)} ${core.slice(7, 9)}`;
 };
+
+// ── Post status konfiguratsiyasi ──────────────────────────────────
+const STATUS_CONFIG = {
+  active:          { label: "ACTIVE",    color: "#28A869", bg: "#E8F8F0" },
+  hidden:          { label: "YASHIRIN",  color: "#D4920A", bg: "#FFF8E6" },
+  deleted:         { label: "O'CHIRILGAN", color: "#FF4D4F", bg: "#FFF1F0" },
+  pending_payment: { label: "TO'LOV KUTMOQDA", color: "#7B5CF5", bg: "#F3F0FF" },
+};
+
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.active;
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 6,
+      background: cfg.bg, color: cfg.color, letterSpacing: 0.3,
+    }}>
+      {cfg.label}
+    </span>
+  );
+}
 
 // ── Yordamchi komponentlar ────────────────────────────────────────
 function TabBar({ active, onChange }) {
@@ -50,7 +70,7 @@ function SearchBar({ value, onChange, placeholder }) {
   );
 }
 
-function ConfirmModal({ msg, onConfirm, onCancel }) {
+function ConfirmModal({ msg, confirmLabel = "O'chirish", confirmColor = "#FF4D4F", onConfirm, onCancel }) {
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", zIndex:999,
                   display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
@@ -63,9 +83,9 @@ function ConfirmModal({ msg, onConfirm, onCancel }) {
             Bekor
           </button>
           <button onClick={onConfirm} style={{ flex:1, padding:"11px", borderRadius:12,
-            border:"none", background:"#FF4D4F", color:"white", cursor:"pointer",
+            border:"none", background:confirmColor, color:"white", cursor:"pointer",
             fontFamily:"inherit", fontSize:13, fontWeight:700 }}>
-            O'chirish
+            {confirmLabel}
           </button>
         </div>
       </div>
@@ -75,17 +95,16 @@ function ConfirmModal({ msg, onConfirm, onCancel }) {
 
 // ── ASOSIY KOMPONENT ─────────────────────────────────────────────
 export default function OperatorPage({ onBack }) {
-  const [tab,        setTab]       = useState("users");
-  const [query,      setQuery]     = useState("");
-  const [users,      setUsers]     = useState([]);
-  const [products,   setProducts]  = useState([]);
-  const [loading,    setLoading]   = useState(false);
-  const [confirm,    setConfirm]   = useState(null); // { type, id, name }
-  const [deposit,    setDeposit]   = useState(null); // { phone, name, mode: 'add'|'withdraw' }
-  const [amount,     setAmount]    = useState("");
-  const [msg,        setMsg]       = useState("");
+  const [tab,      setTab]     = useState("users");
+  const [query,    setQuery]   = useState("");
+  const [users,    setUsers]   = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading,  setLoading]  = useState(false);
+  const [confirm,  setConfirm]  = useState(null); // { type, id, name, action }
+  const [deposit,  setDeposit]  = useState(null); // { phone, name, mode: 'add'|'withdraw' }
+  const [amount,   setAmount]   = useState("");
+  const [msg,      setMsg]      = useState("");
 
-  // Ma'lumot yuklash
   const load = async (q = "") => {
     setLoading(true);
     setMsg("");
@@ -111,18 +130,42 @@ export default function OperatorPage({ onBack }) {
     return () => clearTimeout(t);
   }, [query]);
 
-  // O'chirish
-  const handleDelete = async () => {
-    if (!confirm) return;
+  // ── Foydalanuvchi o'chirish ──
+  const handleDeleteUser = async () => {
+    if (!confirm || confirm.type !== "user") return;
     try {
-      if (confirm.type === "user") await operatorAPI.deleteUser(confirm.id);
-      else await operatorAPI.deleteProduct(confirm.id);
+      const res = await operatorAPI.deleteUser(confirm.id);
+      setMsg(`✅ ${res.message}`);
       setConfirm(null);
       load(query);
     } catch (e) {
       setMsg(e.message);
       setConfirm(null);
     }
+  };
+
+  // ── Mahsulot harakatlari ──
+  const handleProductAction = async () => {
+    if (!confirm || confirm.type !== "product") return;
+    try {
+      let res;
+      if (confirm.action === "delete")   res = await operatorAPI.deleteProduct(confirm.id);
+      else if (confirm.action === "hide") res = await operatorAPI.hideProduct(confirm.id);
+      else if (confirm.action === "show") res = await operatorAPI.showProduct(confirm.id);
+      else if (confirm.action === "approve") res = await operatorAPI.approveProduct(confirm.id);
+
+      setMsg(`✅ ${res?.message || "Bajarildi"}`);
+      setConfirm(null);
+      load(query);
+    } catch (e) {
+      setMsg(e.message);
+      setConfirm(null);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (confirm?.type === "user") handleDeleteUser();
+    else handleProductAction();
   };
 
   const toggleUserBlock = async (u) => {
@@ -135,17 +178,6 @@ export default function OperatorPage({ onBack }) {
     }
   };
 
-  const toggleProductActive = async (p) => {
-    try {
-      const res = await operatorAPI.setProductActive(p.id, !p.is_active);
-      setMsg(`✅ ${res.message}`);
-      load(query);
-    } catch (e) {
-      setMsg(e.message);
-    }
-  };
-
-  // Pul qo'shish / yechish
   const handleDeposit = async () => {
     const sum = Number(amount);
     if (!sum || sum <= 0) { setMsg("Summa kiriting"); return; }
@@ -163,6 +195,62 @@ export default function OperatorPage({ onBack }) {
     }
   };
 
+  // ── Mahsulot status bo'yicha tugma konfiguratsiyasi ──
+  const getProductActions = (p) => {
+    const actions = [];
+    const s = p.status || (p.is_active ? "active" : "hidden");
+
+    if (s === "pending_payment") {
+      actions.push({
+        icon: <CheckCircle size={14} />,
+        bg: "#E8F8F0", color: "#28A869",
+        title: "To'lovni tasdiqlash va ochish",
+        action: "approve",
+        msg: `"${p.name}" uchun to'lovni tasdiqlaysizmi? Post ochiladi.`,
+        confirmLabel: "Tasdiqlash",
+        confirmColor: "#28A869",
+      });
+    }
+
+    if (s === "active") {
+      actions.push({
+        icon: <EyeOff size={14} />,
+        bg: "#FFF8E6", color: "#D4920A",
+        title: "Yashirish",
+        action: "hide",
+        msg: `"${p.name}" ni yashirasizmi?`,
+        confirmLabel: "Yashirish",
+        confirmColor: "#D4920A",
+      });
+    }
+
+    if (s === "hidden" || s === "pending_payment") {
+      actions.push({
+        icon: <Eye size={14} />,
+        bg: "#E8F8F0", color: "#28A869",
+        title: "Ochish",
+        action: "show",
+        msg: `"${p.name}" ni ochmoqchimisiz?`,
+        confirmLabel: "Ochish",
+        confirmColor: "#28A869",
+      });
+    }
+
+    if (s !== "deleted") {
+      actions.push({
+        icon: <Trash2 size={14} />,
+        bg: "#FFF1F0", color: "#FF4D4F",
+        title: "O'chirish",
+        action: "delete",
+        msg: `"${p.name}" ni o'chirishni tasdiqlaysizmi?`,
+        confirmLabel: "O'chirish",
+        confirmColor: "#FF4D4F",
+      });
+    }
+
+    return actions;
+  };
+
   return (
     <div style={{ fontFamily:"'Nunito','Segoe UI',sans-serif", background:C.bg,
                   minHeight:"100vh", maxWidth:430, margin:"0 auto",
@@ -174,7 +262,7 @@ export default function OperatorPage({ onBack }) {
           padding:4, display:"flex", alignItems:"center" }}>
           <ChevronLeft size={22} color={C.text} />
         </button>
-        <div style={{ fontSize:18, fontWeight:900, color:C.text }}>⚙️ Operator paneli</div>
+        <div style={{ fontSize:18, fontWeight:900, color:C.text }}>Operator paneli</div>
       </div>
 
       {/* Xabar */}
@@ -196,7 +284,7 @@ export default function OperatorPage({ onBack }) {
 
       {loading && (
         <div style={{ textAlign:"center", padding:"40px 0", color:C.textMuted }}>
-          <Loader2 size={28} className="spin" style={{ margin:"0 auto" }} />
+          <Loader2 size={28} style={{ margin:"0 auto", display:"block" }} />
         </div>
       )}
 
@@ -224,12 +312,12 @@ export default function OperatorPage({ onBack }) {
                   {u.name}
                 </div>
                 <div style={{ fontSize:11, color:C.textMuted }}>
-                  ID: {u.public_id || u.publicId || "—"} · {formatUzPhone(u.phone)}
+                  ID: {u.public_id || "—"} · {formatUzPhone(u.phone)}
                 </div>
                 <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
                   {Number(u.balance).toLocaleString()} so'm
                 </div>
-                <div style={{ fontSize:10, color: u.is_blocked ? C.danger : "#28A869", fontWeight:800 }}>
+                <div style={{ fontSize:10, color: u.is_blocked ? "#FF4D4F" : "#28A869", fontWeight:800 }}>
                   {u.is_blocked ? "BLOCK" : "ACTIVE"}
                 </div>
               </div>
@@ -249,27 +337,28 @@ export default function OperatorPage({ onBack }) {
                   title="Balansdan yechish">
                   <MinusCircle size={16} />
                 </button>
-                <button onClick={() => setConfirm({ type:"user", id:u.id, name:u.name })}
-                  style={{ width:34, height:34, borderRadius:10, border:"none",
-                    background:C.dangerLight, color:C.danger, cursor:"pointer",
-                    display:"flex", alignItems:"center", justifyContent:"center" }}
-                  title="O'chirish">
-                  <Trash2 size={15} />
-                </button>
                 <button
                   onClick={() => toggleUserBlock(u)}
                   style={{ width:34, height:34, borderRadius:10, border:"none",
                     background: u.is_blocked ? "#E8F8F0" : "#FFF8E6",
                     color: u.is_blocked ? "#28A869" : "#D4920A",
                     cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
-                  title={u.is_blocked ? "Blokdan chiqarish" : "Bloklash"}
-                >
+                  title={u.is_blocked ? "Blokdan chiqarish" : "Bloklash"}>
                   {u.is_blocked ? <Unlock size={15} /> : <Lock size={15} />}
+                </button>
+                <button onClick={() => setConfirm({ type:"user", id:u.id, name:u.name,
+                    msg:`"${u.name}" ni o'chirasizmi? Uning postlari saqlanib qoladi.`,
+                    confirmLabel:"O'chirish", confirmColor:"#FF4D4F" })}
+                  style={{ width:34, height:34, borderRadius:10, border:"none",
+                    background:"#FFF1F0", color:"#FF4D4F", cursor:"pointer",
+                    display:"flex", alignItems:"center", justifyContent:"center" }}
+                  title="O'chirish">
+                  <Trash2 size={15} />
                 </button>
               </div>
             </div>
           ))}
-          {users.length === 0 && !loading && (
+          {users.length === 0 && (
             <div style={{ textAlign:"center", padding:"32px", color:C.textMuted, fontSize:13 }}>
               Foydalanuvchi topilmadi
             </div>
@@ -283,46 +372,52 @@ export default function OperatorPage({ onBack }) {
           <div style={{ fontSize:11, color:C.textMuted, marginBottom:8 }}>
             {products.length} ta mahsulot
           </div>
-          {products.map(p => (
-            <div key={p.id} style={{ background:C.card, borderRadius:14, marginBottom:10,
-              border:`1px solid ${C.border}`, padding:"12px 14px",
-              display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, fontWeight:800, color:C.text,
-                  overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                  {p.name}
+          {products.map(p => {
+            const productActions = getProductActions(p);
+            return (
+              <div key={p.id} style={{ background:C.card, borderRadius:14, marginBottom:10,
+                border:`1px solid ${C.border}`, padding:"12px 14px",
+                display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:800, color:C.text,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
+                    {Number(p.price).toLocaleString()} so'm/{p.unit}
+                  </div>
+                  <div style={{ fontSize:11, color:C.textMuted }}>
+                    {p.owner_name ? `${p.owner_name} (${p.owner_public_id || "—"}) · ${formatUzPhone(p.owner_phone)}` : "Egasiz"}
+                  </div>
+                  <div style={{ marginTop: 3 }}>
+                    <StatusBadge status={p.status || (p.is_active ? "active" : "hidden")} />
+                  </div>
                 </div>
-                <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700 }}>
-                  {Number(p.price).toLocaleString()} so'm/{p.unit}
-                </div>
-                <div style={{ fontSize:11, color:C.textMuted }}>
-                  {p.owner_name} ({p.owner_public_id || "—"}) · {formatUzPhone(p.owner_phone)}
-                </div>
-                <div style={{ fontSize:10, color: p.is_active ? "#28A869" : C.danger, fontWeight:800 }}>
-                  {p.is_active ? "ACTIVE" : "YOPIQ"}
+                <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                  {productActions.map((act) => (
+                    <button
+                      key={act.action}
+                      onClick={() => setConfirm({
+                        type: "product",
+                        id: p.id,
+                        name: p.name,
+                        action: act.action,
+                        msg: act.msg,
+                        confirmLabel: act.confirmLabel,
+                        confirmColor: act.confirmColor,
+                      })}
+                      style={{ width:34, height:34, borderRadius:10, border:"none",
+                        background: act.bg, color: act.color,
+                        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
+                      title={act.title}>
+                      {act.icon}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div style={{ display:"flex", gap:6 }}>
-                <button
-                  onClick={() => toggleProductActive(p)}
-                  style={{ width:34, height:34, borderRadius:10, border:"none", flexShrink:0,
-                    background: p.is_active ? "#FFF8E6" : "#E8F8F0",
-                    color: p.is_active ? "#D4920A" : "#28A869",
-                    cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}
-                  title={p.is_active ? "Yopish" : "Ochish"}
-                >
-                  {p.is_active ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-                <button onClick={() => setConfirm({ type:"product", id:p.id, name:p.name })}
-                  style={{ width:34, height:34, borderRadius:10, border:"none", flexShrink:0,
-                    background:C.dangerLight, color:C.danger, cursor:"pointer",
-                    display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            </div>
-          ))}
-          {products.length === 0 && !loading && (
+            );
+          })}
+          {products.length === 0 && (
             <div style={{ textAlign:"center", padding:"32px", color:C.textMuted, fontSize:13 }}>
               Mahsulot topilmadi
             </div>
@@ -336,7 +431,7 @@ export default function OperatorPage({ onBack }) {
           display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
           <div style={{ background:C.card, borderRadius:20, padding:"24px 20px", width:"100%", maxWidth:340 }}>
             <div style={{ fontSize:15, fontWeight:800, color:C.text, marginBottom:4 }}>
-              {deposit.mode === "withdraw" ? "💸 Balansdan yechish" : "💰 Pul qo'shish"}
+              {deposit.mode === "withdraw" ? "Balansdan yechish" : "Pul qo'shish"}
             </div>
             <div style={{ fontSize:12, color:C.textMuted, marginBottom:16 }}>
               {deposit.name} · {formatUzPhone(deposit.phone)}
@@ -377,11 +472,13 @@ export default function OperatorPage({ onBack }) {
         </div>
       )}
 
-      {/* ── O'CHIRISH TASDIQI ── */}
+      {/* ── TASDIQLASH MODALI ── */}
       {confirm && (
         <ConfirmModal
-          msg={`"${confirm.name}" ni o'chirishni tasdiqlaysizmi?`}
-          onConfirm={handleDelete}
+          msg={confirm.msg || `"${confirm.name}" ni o'chirishni tasdiqlaysizmi?`}
+          confirmLabel={confirm.confirmLabel || "O'chirish"}
+          confirmColor={confirm.confirmColor || "#FF4D4F"}
+          onConfirm={handleConfirm}
           onCancel={() => setConfirm(null)}
         />
       )}
