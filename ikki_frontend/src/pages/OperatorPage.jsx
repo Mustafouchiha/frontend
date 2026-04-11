@@ -103,7 +103,8 @@ export default function OperatorPage({ onBack }) {
   const [confirm,  setConfirm]  = useState(null); // { type, id, name, action }
   const [deposit,  setDeposit]  = useState(null); // { phone, name, mode: 'add'|'withdraw' }
   const [amount,   setAmount]   = useState("");
-  const [msg,      setMsg]      = useState("");
+  const [msg,        setMsg]        = useState("");
+  const [submitting, setSubmitting] = useState(false); // double-click himoyasi
 
   const load = async (q = "") => {
     setLoading(true);
@@ -179,8 +180,10 @@ export default function OperatorPage({ onBack }) {
   };
 
   const handleDeposit = async () => {
+    if (submitting) return;                          // double-click himoyasi
     const sum = Number(amount);
     if (!sum || sum <= 0) { setMsg("Summa kiriting"); return; }
+    setSubmitting(true);
     try {
       const res =
         deposit.mode === "withdraw"
@@ -192,6 +195,8 @@ export default function OperatorPage({ onBack }) {
       load(query);
     } catch (e) {
       setMsg(e.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -469,14 +474,22 @@ export default function OperatorPage({ onBack }) {
                 cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:700, color:C.textSub }}>
                 Bekor
               </button>
-              <button onClick={handleDeposit} style={{ flex:1, padding:"11px",
-                borderRadius:12, border:"none",
-                background: deposit.mode === "withdraw"
-                  ? "linear-gradient(135deg,#FF6B6B,#FF4D4F)"
-                  : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                color:"white", cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:700 }}>
-                <Wallet size={14} style={{ verticalAlign:"middle", marginRight:4 }} />
-                {deposit.mode === "withdraw" ? "Yechish" : "Qo'shish"}
+              <button
+                onClick={handleDeposit}
+                disabled={submitting}
+                style={{ flex:1, padding:"11px",
+                  borderRadius:12, border:"none",
+                  background: submitting ? "#ccc"
+                    : deposit.mode === "withdraw"
+                      ? "linear-gradient(135deg,#FF6B6B,#FF4D4F)"
+                      : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                  color:"white", cursor: submitting ? "not-allowed" : "pointer",
+                  fontFamily:"inherit", fontSize:13, fontWeight:700,
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                {submitting
+                  ? <><Loader2 size={14} className="spin" /> Yuborilmoqda...</>
+                  : <><Wallet size={14} /> {deposit.mode === "withdraw" ? "Yechish" : "Qo'shish"}</>
+                }
               </button>
             </div>
           </div>

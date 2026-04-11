@@ -173,15 +173,76 @@ export default function App() {
   // ── Loading splash ───────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-                    height:"100vh", background:C.bg, flexDirection:"column", gap:12 }}>
-        <div style={{ width:60, height:60, borderRadius:18,
-                      background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:28 }}>♻️</div>
-        <div style={{ fontSize:13, color:C.textMuted, fontFamily:"'Nunito','Segoe UI',sans-serif" }}>
-          Yuklanmoqda...
+      <>
+        <style>{`
+          @keyframes rm-bounce {
+            0%,100% { transform: translateY(0px); }
+            50%      { transform: translateY(-14px); }
+          }
+          @keyframes rm-spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes rm-fadein {
+            from { opacity:0; transform:translateY(10px); }
+            to   { opacity:1; transform:translateY(0); }
+          }
+          @keyframes rm-dot {
+            0%,80%,100% { transform:scale(0.6); opacity:0.4; }
+            40%          { transform:scale(1);   opacity:1;   }
+          }
+        `}</style>
+        <div style={{
+          display:"flex", alignItems:"center", justifyContent:"center",
+          height:"100vh", background:C.bg, flexDirection:"column",
+          gap:10, fontFamily:"'Nunito','Segoe UI',sans-serif",
+        }}>
+          {/* Qurilish emojilari — chapdan o'ngga kech-navbat sakraydi */}
+          <div style={{ display:"flex", gap:10, marginBottom:8 }}>
+            {["🏗️","🧱","🪚","🔩","♻️"].map((em, i) => (
+              <span key={i} style={{
+                fontSize: 30,
+                display:"inline-block",
+                animation:`rm-bounce 1.4s ease-in-out infinite`,
+                animationDelay:`${i * 0.18}s`,
+              }}>{em}</span>
+            ))}
+          </div>
+
+          {/* Logo aylanuvchi */}
+          <div style={{
+            width:64, height:64, borderRadius:20,
+            background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:30,
+            animation:"rm-spin 3s linear infinite",
+            boxShadow:`0 8px 24px rgba(255,140,50,0.4)`,
+            marginBottom:4,
+          }}>♻️</div>
+
+          <div style={{
+            fontSize:22, fontWeight:900, color:C.text,
+            animation:"rm-fadein 0.7s ease-out",
+          }}>ReMarket</div>
+
+          <div style={{
+            fontSize:12, color:C.textMuted,
+            animation:"rm-fadein 1s ease-out",
+          }}>Yuklanmoqda...</div>
+
+          {/* Animatsiyali nuqtalar */}
+          <div style={{ display:"flex", gap:7, marginTop:6 }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{
+                width:9, height:9, borderRadius:"50%",
+                background:C.primaryDark,
+                animation:`rm-dot 1.2s ease-in-out infinite`,
+                animationDelay:`${i * 0.2}s`,
+              }}/>
+            ))}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
