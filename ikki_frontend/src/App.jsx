@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
@@ -37,6 +37,7 @@ export default function App() {
   const [homeAction, setHomeAction] = useState(null);
   const [loading,    setLoading]    = useState(!!savedUser());
   const [offline,    setOffline]    = useState(false);
+  const loadDataRef = useRef(null); // interval uchun ref
 
   const loggedIn = !!user && !!getToken();
   const guestUser = user || { id: null, name: "Mehmon", phone: "", telegram: "", avatar: null };
@@ -76,7 +77,7 @@ export default function App() {
     })();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const prods = await productsAPI.getAll();
       setOffline(false);
@@ -96,7 +97,41 @@ export default function App() {
     } catch (e) {
       if (e.offline) setOffline(true);
     }
-  };
+  }, []);
+
+  // ── Auto-refresh: ilovaga qaytilganda + har 30s ──────────────────
+  useEffect(() => {
+    // ref ni saqlash — cleanup uchun
+    loadDataRef.current = loadData;
+  }, [loadData]);
+
+  useEffect(() => {
+    // 1. Sahifa yashirinib ochilganda (background → foreground)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadDataRef.current?.();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // 2. Telegram Mini App focus eventlari
+    const tgApp = window.Telegram?.WebApp;
+    const onTgActivated = () => loadDataRef.current?.();
+    tgApp?.onEvent?.("activated", onTgActivated);
+
+    // 3. Har 30 soniyada yangilash
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadDataRef.current?.();
+      }
+    }, 30_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      tgApp?.offEvent?.("activated", onTgActivated);
+      clearInterval(interval);
+    };
+  }, []); // faqat bir marta — mount/unmount
 
   const handleLogin = async (userData) => {
     setUser(userData);
