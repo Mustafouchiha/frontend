@@ -3,7 +3,7 @@ import { C } from "../constants";
 import { operatorAPI } from "../services/api";
 import {
   Search, Trash2, PlusCircle, MinusCircle, Users, Package,
-  Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff, CheckCircle,
+  Loader2, ChevronLeft, Wallet, Lock, Unlock, Eye, EyeOff, CheckCircle, RotateCcw,
 } from "lucide-react";
 
 const phoneCore = (value) => {
@@ -236,7 +236,18 @@ export default function OperatorPage({ onBack }) {
       });
     }
 
-    if (s !== "deleted") {
+    if (s === "deleted") {
+      // O'chirilgan postni tiklash
+      actions.push({
+        icon: <RotateCcw size={14} />,
+        bg: "#E8F8F0", color: "#28A869",
+        title: "Tiklanish (qayta ochish)",
+        action: "show",
+        msg: `"${p.name}" ni qayta ochmoqchimisiz?`,
+        confirmLabel: "Qayta ochish",
+        confirmColor: "#28A869",
+      });
+    } else {
       actions.push({
         icon: <Trash2 size={14} />,
         bg: "#FFF1F0", color: "#FF4D4F",

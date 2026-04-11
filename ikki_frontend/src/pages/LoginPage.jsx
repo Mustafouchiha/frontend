@@ -175,7 +175,12 @@ export default function LoginPage({ onLogin }) {
       fontFamily: "'Nunito','Segoe UI',sans-serif", background: C.bg,
       minHeight: "100vh", maxWidth: 430, margin: "0 auto",
       display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center", padding: "40px 28px",
+      alignItems: "center",
+      // justifyContent: "center" o'chirildi — klaviatura ochilganda
+      // sahifa scroll bo'ladi va tugma ko'rinib qoladi
+      overflowY: "auto",
+      padding: "48px 28px 40px",
+      boxSizing: "border-box",
     }}>
       {/* Telegram token orqali yuklanayotgan bo'lsa */}
       {loading && !step && (
