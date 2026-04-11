@@ -144,6 +144,30 @@ router.get("/tg-token/:token", async (req, res) => {
   }
 });
 
+// POST /api/auth/tg-auto-login — Telegram WebApp orqali avtomatik kirish
+// Foydalanuvchi oldin ro'yxatdan o'tgan bo'lsa, tg_chat_id bilan tokensiz kiradi
+router.post("/tg-auto-login", async (req, res) => {
+  try {
+    const { tgChatId } = req.body;
+    if (!tgChatId) {
+      return res.status(400).json({ message: "tgChatId majburiy" });
+    }
+
+    const user = await User.findByTgChatId(Number(tgChatId));
+    if (!user) {
+      return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
+    }
+    if (user.is_blocked) {
+      return res.status(403).json({ message: "Hisobingiz bloklangan" });
+    }
+
+    const token = makeToken(user.id);
+    res.json({ token, user: formatUser(user) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET /api/auth/me
 router.get("/me", authMiddleware, (req, res) => {
   res.json(formatUser(req.user));

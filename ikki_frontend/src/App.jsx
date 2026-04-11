@@ -5,7 +5,7 @@ import ProfilePage from "./pages/ProfilePage";
 import PaymentPage from "./pages/PaymentPage";
 import OperatorPage from "./pages/OperatorPage";
 import { C } from "./constants";
-import { getToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services/api";
+import { getToken, setToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services/api";
 import { Home, Plus } from "lucide-react";
 
 const OPERATOR_PHONES = ["331350206"];
@@ -43,15 +43,30 @@ export default function App() {
 
   // ── On mount: verify token + load data ──────────────────────────
   useEffect(() => {
-    // Har doim Home uchun mahsulotlarni yuklaymiz (guest ham ko'rsin)
     (async () => {
       try {
         if (getToken()) {
+          // 1. Token mavjud — serverda tekshiramiz
           const me = await authAPI.me();
           setUser(me);
           localStorage.setItem("rm_user", JSON.stringify(me));
+        } else {
+          // 2. Token yo'q — Telegram WebApp orqali avtomatik kirish urinishi
+          //    Foydalanuvchi oldin ro'yxatdan o'tgan bo'lsa, tg_chat_id topiladi
+          const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+          if (tgUser?.id) {
+            try {
+              const data = await authAPI.tgAutoLogin(tgUser.id);
+              setToken(data.token);
+              localStorage.setItem("rm_user", JSON.stringify(data.user));
+              setUser(data.user);
+            } catch {
+              // Foydalanuvchi topilmadi → login sahifasini ko'rsatamiz
+            }
+          }
         }
       } catch {
+        // Token yaroqsiz — tozalaymiz
         clearAuth();
         setUser(null);
       } finally {

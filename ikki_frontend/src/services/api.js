@@ -52,6 +52,14 @@ export const authAPI = {
   // Telegram bot yuborgan 1 martalik token orqali kirish
   loginWithTgToken: (token) =>
     apiFetch(`${BASE}/auth/tg-token/${token}`, { headers: headers() }).then(handle),
+
+  // Telegram WebApp orqali avtomatik kirish (oldin ro'yxatdan o'tgan bo'lsa)
+  tgAutoLogin: (tgChatId) =>
+    apiFetch(`${BASE}/auth/tg-auto-login`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ tgChatId }),
+    }).then(handle),
 };
 
 // ─── OPERATOR ─────────────────────────────────────────────────────
