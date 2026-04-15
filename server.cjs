@@ -149,8 +149,18 @@ app.get("/api/products", (req, res) => {
     }
   } catch {}
 
-  let list = (db.products || []).filter((p) => p.is_active !== false);
-  if (userId)   list = list.filter((p) => p.owner_id !== userId);
+  let list = (db.products || []).filter((p) => {
+    // Status bo'yicha filtrlash
+    const statusMatch = !status || p.status === status;
+    
+    // Faqat approved statuslari ko'rsatiladi (pending, deleted emas)
+    const isApproved = p.status === "approved" || p.status === undefined;
+    
+    // O'z postlari chiqariladi
+    const notOwn = !userId || p.owner_id !== userId;
+    
+    return statusMatch && isApproved && notOwn;
+  });
   if (category) list = list.filter((p) => p.category === category);
   if (viloyat)  list = list.filter((p) => p.viloyat  === viloyat);
   if (search)   list = list.filter((p) =>
@@ -169,7 +179,7 @@ app.get("/api/products/my", auth, (req, res) => {
 
 // POST /api/products
 app.post("/api/products", auth, (req, res) => {
-  const { name, category, price, unit, qty, condition, viloyat, tuman, photo } = req.body;
+  const { name, category, price, unit, qty, condition, viloyat, tuman, mahalla, photo } = req.body;
   if (!name || !price || !viloyat)
     return res.status(400).json({ message: "Nomi, narxi va viloyat majburiy" });
 
@@ -184,9 +194,11 @@ app.post("/api/products", auth, (req, res) => {
     condition:  condition || "Yaxshi",
     viloyat,
     tuman:      tuman     || "",
+    mahalla:    mahalla   || "",
     photo:      photo     || null,
     owner_id:   req.user.id,
     is_active:  true,
+    status:     "pending",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -194,6 +206,15 @@ app.post("/api/products", auth, (req, res) => {
   db.products.push(product);
   saveDB(db);
   console.log(`📦 Mahsulot qo'shildi: ${name}`);
+  
+  // Notify operators
+  try {
+    const { notifyOperators } = require('./bot');
+    notifyOperators(product);
+  } catch (error) {
+    console.log('Bot notification error:', error.message);
+  }
+  
   res.status(201).json(fmtProduct(product, db));
 });
 
@@ -205,7 +226,7 @@ app.put("/api/products/:id", auth, (req, res) => {
   if (p.owner_id !== req.user.id)
     return res.status(403).json({ message: "Ruxsat yo'q" });
 
-  const fields = ["name","category","unit","condition","viloyat","tuman","photo","is_active"];
+  const fields = ["name","category","unit","condition","viloyat","tuman","mahalla","photo","is_active","status"];
   const numFields = ["price","qty"];
   for (const f of fields)    if (req.body[f] !== undefined) p[f] = req.body[f];
   for (const f of numFields) if (req.body[f] !== undefined) p[f] = Number(req.body[f]);

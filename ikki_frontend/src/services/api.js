@@ -111,6 +111,13 @@ export const productsAPI = {
 
   remove: (id) =>
     apiFetch(`${BASE}/products/${id}`, { method: "DELETE", headers: headers() }).then(handle),
+
+  updatePostStatus: (id, status) =>
+    apiFetch(`${BASE}/products/${id}/payment-status`, { 
+      method: "PUT", 
+      headers: headers(), 
+      body: JSON.stringify({ status }) 
+    }).then(handle),
 };
 
 // ─── OFFERS ───────────────────────────────────────────────────────

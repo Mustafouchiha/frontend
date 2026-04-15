@@ -6,7 +6,7 @@ import PaymentPage from "./pages/PaymentPage";
 import OperatorPage from "./pages/OperatorPage";
 import { C } from "./constants";
 import { getToken, clearAuth, productsAPI, offersAPI, authAPI } from "./services/api";
-import { Home, Plus } from "lucide-react";
+import { Home, Plus, Loader2 } from "lucide-react";
 
 const OPERATOR_PHONES = ["331350206"];
 const phoneCore = (value) => {

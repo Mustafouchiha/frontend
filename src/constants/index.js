@@ -41,40 +41,17 @@ export const UZ = {
   "Qoraqalpog'iston":["Nukus sh.","Beruniy","Chimboy","Ellikkala","Kegeyli","Mo'ynoq","Qonliko'l","Qo'ng'irot","Shumanay","Taxtako'pir","To'rtko'l","Xo'jayli"],
 };
 
-// demo rasmlar uchun placeholder — real app da haqiqiy rasm URL lari
-export const DEMO_PHOTOS = [
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80",
-];
-
 export const CATS    = ["Barchasi","g'isht","metall","yog'och","beton","boshqa"];
 export const CAT_ICO = { "Barchasi":"🏗","g'isht":"🧱","metall":"🔩","yog'och":"🪵","beton":"⬜","boshqa":"🔧" };
 
-export const INIT_PRODUCTS = [
-  { id:1, name:"Eski g'isht",      category:"g'isht",  price:450,    unit:"dona", qty:2000, viloyat:"Toshkent sh.", tuman:"Yunusobod",      photo:DEMO_PHOTOS[0], condition:"A'lo",   ownerId:1 },
-  { id:2, name:"Temir profil",     category:"metall",  price:12000,  unit:"kg",   qty:500,  viloyat:"Toshkent sh.", tuman:"Chilonzor",       photo:DEMO_PHOTOS[1], condition:"Yaxshi", ownerId:2 },
-  { id:3, name:"Yog'och taxta",    category:"yog'och", price:25000,  unit:"m²",   qty:80,   viloyat:"Samarqand",    tuman:"Samarqand sh.",   photo:DEMO_PHOTOS[2], condition:"A'lo",   ownerId:1 },
-  { id:4, name:"Beton plita",      category:"beton",   price:85000,  unit:"dona", qty:30,   viloyat:"Toshkent sh.", tuman:"Sergeli",          photo:DEMO_PHOTOS[3], condition:"O'rta",  ownerId:2 },
-  { id:5, name:"Plastik quvur",    category:"boshqa",  price:8500,   unit:"m",    qty:200,  viloyat:"Andijon",      tuman:"Andijon sh.",      photo:DEMO_PHOTOS[4], condition:"Yaxshi", ownerId:1 },
-  { id:6, name:"Shifer",           category:"boshqa",  price:35000,  unit:"dona", qty:45,   viloyat:"Namangan",     tuman:"Namangan sh.",     photo:DEMO_PHOTOS[5], condition:"Yaxshi", ownerId:2 },
-  { id:7, name:"Alyuminiy deraza", category:"metall",  price:320000, unit:"dona", qty:12,   viloyat:"Toshkent sh.", tuman:"Mirzo Ulug'bek",   photo:DEMO_PHOTOS[6], condition:"A'lo",   ownerId:1 },
-  { id:8, name:"Parket taxta",     category:"yog'och", price:65000,  unit:"m²",   qty:60,   viloyat:"Toshkent sh.", tuman:"Yakkasaroy",       photo:DEMO_PHOTOS[7], condition:"A'lo",   ownerId:2 },
-];
+export const EMPTY_FORM = {
+  name:"", category:"g'isht", price:"", unit:"dona", qty:"",
+  viloyat:"", tuman:"", mahalla:"", condition:"A'lo", photos:[],
+};
 
-export const INIT_USER = { id:1, name:"Abdulloh Karimov", phone:"+998 90 123 45 67", telegram:"@abdulloh_k", avatar:null, joined:"2024-03-15" };
-export const EMPTY_FORM = { name:"", category:"g'isht", price:"", unit:"dona", qty:"", viloyat:"", tuman:"", condition:"A'lo", photo:null };
-
-// Operator ma'lumotlari (real app da backenddan keladi)
+// Operator ma'lumotlari
 export const OPERATOR = {
-  telegram: "@remarket_operator",
-  card:     "8600 1234 5678 9012",
-  name:     "ReMarket Operator",
+  telegram: "@Requrilish_admin",
+  card:     "9860 1606 1973 1286",
+  name:     "Mustafo Ismoiljonov",
 };
