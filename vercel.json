@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "installCommand": "npm install",
+  "buildCommand": "cd ikki_frontend && npm install && npm run build",
+  "outputDirectory": "ikki_frontend/dist",
+  "functions": {
+    "api/[...path].js": {
+      "includeFiles": "backend/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/:path*",     "destination": "/index.html"  }
+  ]
+}
