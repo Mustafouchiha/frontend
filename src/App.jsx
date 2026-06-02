@@ -4,7 +4,7 @@ import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
 import OperatorPage from "./pages/OperatorPage";
 import { C } from "./constants";
-import { getToken, setToken, clearAuth, productsAPI, offersAPI, authAPI, ping } from "./services/api";
+import { getToken, setToken, clearAuth, productsAPI, authAPI, ping } from "./services/api";
 import { Home, Plus } from "lucide-react";
 
 const OPERATOR_PHONES = ["331350206"];
@@ -35,12 +35,12 @@ function LoadingSplash() {
       <div style={{ width:72, height:72, borderRadius:22,
                     background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:34, boxShadow:`0 8px 24px rgba(244,137,74,0.4)`,
+                    fontSize:34, boxShadow:`0 8px 24px rgba(56,189,248,0.4)`,
                     animation:"pulse 1.5s ease-in-out infinite" }}>
         🏗
       </div>
       <div style={{ fontSize:18, fontWeight:800, color:C.text, fontFamily:"'Nunito','Segoe UI',sans-serif" }}>
-        ReQurilish
+        ReNarx
       </div>
       <div style={{ display:"flex", gap:6 }}>
         {[0,1,2].map(i => (
@@ -62,10 +62,9 @@ export default function App() {
   const cached = savedUser();
 
   const [user,       setUser]       = useState(cached);
-  const [nav,        setNav]        = useState("home"); // always start at home
+  const [nav,        setNav]        = useState("home");
   const [products,   setProducts]   = useState([]);
   const [myProducts, setMyProducts] = useState([]);
-  const [offers,     setOffers]     = useState([]);
   const [homeAction, setHomeAction] = useState(null);
   const [loading,    setLoading]    = useState(false);
   const [offline,    setOffline]    = useState(false);
@@ -73,6 +72,7 @@ export default function App() {
 
   const loggedIn = !!user && !!getToken();
   const guestUser = user || { id: null, name: "Mehmon", phone: "", telegram: "", avatar: null };
+  const opUser = loggedIn ? isOperator(user) : false;
 
   const loadData = async () => {
     try {
@@ -80,15 +80,10 @@ export default function App() {
       setOffline(false);
       setProducts(prods);
       if (getToken()) {
-        const [my, offs] = await Promise.all([
-          productsAPI.getMy(),
-          offersAPI.getReceived(),
-        ]);
+        const my = await productsAPI.getMy();
         setMyProducts(my);
-        setOffers(offs);
       } else {
         setMyProducts([]);
-        setOffers([]);
       }
     } catch (e) {
       if (e.offline) setOffline(true);
@@ -193,7 +188,6 @@ export default function App() {
     clearAuth();
     setUser(null);
     setMyProducts([]);
-    setOffers([]);
     setNav("home");
     try { setProducts(await productsAPI.getAll()); } catch { /* silent */ }
   };
@@ -242,18 +236,21 @@ export default function App() {
           fontWeight: nav==="home" ? 800 : 400 }}>Bosh</div>
       </div>
 
-      <div onClick={() => { setHomeAction("openAdd"); setNav("home"); }}
-        style={{ flex:1, display:"flex", flexDirection:"column",
-                 alignItems:"center", cursor:"pointer" }}>
-        <div style={{ width:52, height:52, borderRadius:17,
-                      background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      marginTop:-24, boxShadow:`0 6px 20px rgba(255,179,128,0.6)`,
-                      border:"3px solid white" }}>
-          <Plus size={26} color="white" strokeWidth={2.5} />
+      {opUser && (
+        <div onClick={() => { setHomeAction("openAdd"); setNav("home"); }}
+          style={{ flex:1, display:"flex", flexDirection:"column",
+                   alignItems:"center", cursor:"pointer" }}>
+          <div style={{ width:52, height:52, borderRadius:17,
+                        background:`linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        marginTop:-24, boxShadow:`0 6px 20px rgba(56,189,248,0.5)`,
+                        border:"3px solid white" }}>
+            <Plus size={26} color="white" strokeWidth={2.5} />
+          </div>
+          <div style={{ fontSize:9, marginTop:4, color:C.textMuted, fontWeight:400 }}>E'lon</div>
         </div>
-        <div style={{ fontSize:9, marginTop:4, color:C.textMuted, fontWeight:400 }}>E'lon</div>
-      </div>
+      )}
+      {!opUser && <div style={{ flex:1 }} />}
 
       <div onClick={() => setNav("profile")}
         style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
@@ -306,7 +303,6 @@ export default function App() {
       {!loggedIn && nav === "home" && (
         <HomePage
           user={guestUser} products={products} setProducts={setProducts}
-          offers={offers} setOffers={setOffers}
           onNavChange={setNav} homeAction={homeAction} setHomeAction={setHomeAction}
           onProductAdded={handleAddProduct} loggedIn={false}
           onRequireAuth={() => setNav("login")}
@@ -339,7 +335,6 @@ export default function App() {
         <>
           <HomePage
             user={user} products={products} setProducts={setProducts}
-            offers={offers} setOffers={setOffers}
             onNavChange={setNav} homeAction={homeAction} setHomeAction={setHomeAction}
             onProductAdded={handleAddProduct} onDelete={handleDeleteProduct}
             isOperator={isOperator(user)} loggedIn={true}

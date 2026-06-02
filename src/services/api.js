@@ -1,4 +1,4 @@
-const PROD_API_FALLBACK = "https://requrilish.onrender.com";
+const PROD_API_FALLBACK = "https://renarx-api.onrender.com";
 const RAW_BASE = import.meta.env.VITE_API_URL
   || (import.meta.env.PROD ? PROD_API_FALLBACK : "");
 const BASE = RAW_BASE
@@ -149,6 +149,12 @@ export const productsAPI = {
     apiFetch(`${BASE}/products/${id}`, { method: "PUT", headers: headers(), body: JSON.stringify(body) }).then(handle),
   remove: (id) =>
     apiFetch(`${BASE}/products/${id}`, { method: "DELETE", headers: headers() }).then(handle),
+  getSimilar: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+    ).toString();
+    return apiFetch(`${BASE}/products/similar${qs ? "?" + qs : ""}`, { headers: headers() }).then(handle);
+  },
 };
 
 // ─── OFFERS ───────────────────────────────────────────────────────

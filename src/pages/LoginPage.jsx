@@ -5,7 +5,7 @@ import { authAPI, setToken } from "../services/api";
 import Logo from "../components/Logo";
 import { Smartphone, Loader2, KeyRound, AlertTriangle, ArrowLeft } from "lucide-react";
 
-const BOT_URL = import.meta.env.VITE_TG_BOT_URL || "https://t.me/Requrilishbot";
+const BOT_URL = import.meta.env.VITE_TG_BOT_URL || "https://t.me/ReNarxbot";
 
 // Mini App ichida Telegram link ochish (mini appni yopmaydi)
 function openBot() {
@@ -79,7 +79,7 @@ export default function LoginPage({ onLogin }) {
       if (e.offline) {
         setError("Server vaqtincha ishlamayapti. Bir oz kuting va qayta urining.");
       } else if (e.needBot || (e.message || "").toLowerCase().includes("bot")) {
-        setError("Avval @Requrilishbot ga /start yuboring, keyin qaytib keling.");
+        setError("Avval @ReNarxbot ga /start yuboring, keyin qaytib keling.");
       } else {
         setError(e.message || "Xatolik yuz berdi");
       }
@@ -118,7 +118,7 @@ export default function LoginPage({ onLogin }) {
     }}>
       {/* Logo */}
       <div style={{ marginBottom:12 }}><Logo size={72} /></div>
-      <div style={{ fontSize:26, fontWeight:900, color:C.text, marginBottom:2 }}>ReQurilish</div>
+      <div style={{ fontSize:26, fontWeight:900, color:C.text, marginBottom:2 }}>ReNarx</div>
       <div style={{ fontSize:12, color:C.textMuted, marginBottom:24, textAlign:"center" }}>
         Qurilish materiallari bozori
       </div>
@@ -161,7 +161,7 @@ export default function LoginPage({ onLogin }) {
                     fontSize:11, color:"#0088CC", fontFamily:"inherit", fontWeight:700,
                     textDecoration:"underline",
                   }}>
-                    @Requrilishbot → /start
+                    @ReNarxbot → /start
                   </button>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export default function LoginPage({ onLogin }) {
                   Telegram kodingizni kiriting
                 </div>
                 <div style={{ fontSize:12, color:C.textMuted, lineHeight:1.5 }}>
-                  @Requrilishbot dan 6 xonali kod yuborildi
+                  @ReNarxbot dan 6 xonali kod yuborildi
                 </div>
                 <div style={{ marginTop:8, display:"inline-block",
                               background:C.primaryLight, border:`1px solid ${C.primaryBorder}`,
