@@ -18,7 +18,7 @@ const headers = (extra = {}) => ({
   ...extra,
 });
 
-const apiFetch = (url, opts, timeoutMs = 15000) => {
+const apiFetch = (url, opts, timeoutMs = 35000) => {
   const timeout = new Promise((_, reject) =>
     setTimeout(() => {
       const e = new Error("SERVER_OFFLINE"); e.offline = true; reject(e);
