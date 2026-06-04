@@ -181,8 +181,6 @@ export default function HomePage({
   const canStep3    = form.name && form.price_1 && form.qty;
   const canStep4    = !!form.viloyat;
 
-  const BOT_LINK = import.meta.env.VITE_TG_BOT_URL || "https://t.me/ReNarxbot";
-  const QR_URL   = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(BOT_LINK)}&size=180x180`;
 
   return (
     <div style={{ fontFamily:"'Nunito','Segoe UI',sans-serif", background:C.bg,
@@ -324,25 +322,6 @@ export default function HomePage({
         </div>
       )}
 
-      {/* QR banner */}
-      <div style={{ margin:"14px 15px 4px", background:"white", borderRadius:14,
-                    border:`1.5px solid ${C.border}`, padding:"12px 14px",
-                    display:"flex", alignItems:"center", gap:12 }}>
-        <img src={QR_URL} alt="QR" style={{ width:68, height:68, borderRadius:8, flexShrink:0 }} />
-        <div>
-          <div style={{ fontSize:12, fontWeight:800, color:C.text, marginBottom:2 }}>
-            Telegram bot orqali ko'ring
-          </div>
-          <div style={{ fontSize:10, color:C.textSub, lineHeight:1.5 }}>
-            QR skaner bilan skanerlang — barcha mahsulotlarni ko'rasiz
-          </div>
-          <a href={BOT_LINK} target="_blank" rel="noopener noreferrer"
-            style={{ display:"inline-block", marginTop:4, fontSize:10,
-                     color:C.primaryDark, fontWeight:700, textDecoration:"none" }}>
-            {BOT_LINK.replace("https://","")} →
-          </a>
-        </div>
-      </div>
 
       {/* ── SHEETS ── */}
 

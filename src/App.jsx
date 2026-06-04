@@ -252,25 +252,28 @@ export default function App() {
       )}
       {!opUser && <div style={{ flex:1 }} />}
 
-      <div onClick={() => setNav("profile")}
-        style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
-        <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
-                      overflow:"hidden",
-                      border:`2.5px solid ${nav==="profile" ? C.primaryDark : C.border}`,
-                      background: (loggedIn && user?.avatar) ? "transparent"
-                        : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
-                      display:"flex", alignItems:"center", justifyContent:"center" }}>
-          {loggedIn && user?.avatar
-            ? <img src={user.avatar} alt="av" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-            : <span style={{ fontSize:11, fontWeight:900, color:"white" }}>
-                {((loggedIn ? user?.name : "M") || "?").split(" ").map(w=>w[0]).join("").slice(0,2)}
-              </span>
-          }
+      {opUser && (
+        <div onClick={() => setNav("profile")}
+          style={{ flex:1, textAlign:"center", cursor:"pointer" }}>
+          <div style={{ width:30, height:30, borderRadius:"50%", margin:"0 auto",
+                        overflow:"hidden",
+                        border:`2.5px solid ${nav==="profile" ? C.primaryDark : C.border}`,
+                        background: (loggedIn && user?.avatar) ? "transparent"
+                          : `linear-gradient(135deg,${C.primary},${C.primaryDark})`,
+                        display:"flex", alignItems:"center", justifyContent:"center" }}>
+            {loggedIn && user?.avatar
+              ? <img src={user.avatar} alt="av" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+              : <span style={{ fontSize:11, fontWeight:900, color:"white" }}>
+                  {(user?.name || "O").split(" ").map(w=>w[0]).join("").slice(0,2)}
+                </span>
+            }
+          </div>
+          <div style={{ fontSize:9, marginTop:3,
+            color: nav==="profile" ? C.primaryDark : C.textMuted,
+            fontWeight: nav==="profile" ? 700 : 400 }}>Profil</div>
         </div>
-        <div style={{ fontSize:9, marginTop:3,
-          color: nav==="profile" ? C.primaryDark : C.textMuted,
-          fontWeight: nav==="profile" ? 700 : 400 }}>Profil</div>
-      </div>
+      )}
+      {!opUser && <div style={{ flex:1 }} />}
     </div>
   );
 
@@ -298,6 +301,9 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* Oddiy user profile ga kirmasin */}
+      {loggedIn && !opUser && nav === "profile" && (() => { setNav("home"); return null; })()}
 
       {/* Guest: faqat home */}
       {!loggedIn && nav === "home" && (
