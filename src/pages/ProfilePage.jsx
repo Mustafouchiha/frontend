@@ -41,7 +41,6 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
   const [saving,    setSaving]    = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Polling orqali user yangilansa, editMode bo'lmasa draft sinxronlansin
   useEffect(() => {
     if (!editMode) {
       setDraft({ name: user.name, avatar: user.avatar });
@@ -58,7 +57,6 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
     setEditMode(false);
   };
 
-  // Avatar o'zgarganda darhol serverga saqlansin
   const handleAvatarChange = async (newAvatar) => {
     setDraft(d => ({ ...d, avatar: newAvatar }));
     try {
@@ -217,12 +215,11 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
           ))}
         </div>
 
-        {/* My listings — show all statuses */}
+        {/* My listings */}
         <div style={{ display:"flex", alignItems:"center", gap:7, fontSize:14, fontWeight:800, color:C.text, marginBottom:12 }}>
           <Package size={16} color={C.primaryDark} /> Mening e'lonlarim
         </div>
 
-        {/* Hide self-deleted products; still show operator-rejected ones */}
         {myProducts.filter(p => p.status !== "deleted" || p.rejectedReason).length === 0 ? (
           <div style={{ textAlign:"center", padding:"32px 20px", color:C.textMuted,
                         background:C.card, borderRadius:16, border:`1px solid ${C.border}` }}>
@@ -253,7 +250,7 @@ export default function ProfilePage({ user, setUser, myProducts, onDelete, onLog
                   <div style={{ fontSize:13, fontWeight:800, color:C.text, overflow:"hidden",
                                 textOverflow:"ellipsis", whiteSpace:"nowrap", marginBottom:2 }}>{p.name}</div>
                   <div style={{ fontSize:12, fontWeight:700, color:C.primaryDark, marginBottom:4 }}>
-                    {p.price.toLocaleString()} so'm/{p.unit}
+                    {Number(p.price_1 || p.price || 0).toLocaleString()} so'm/{p.unit}
                   </div>
                   <div style={{ display:"flex", gap:6, alignItems:"flex-start", flexWrap:"wrap" }}>
                     <span style={{ fontSize:9, fontWeight:700, padding:"2px 7px", borderRadius:7,

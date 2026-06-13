@@ -15,6 +15,8 @@ import {
   Ruler, TrendingDown,
 } from "lucide-react";
 
+const BOT_LINK = "https://t.me/ReNarx_admin";
+
 function priceTier(p, qty) {
   const n = Number(qty) || 1;
   if (n >= 100 && p.price_100) return Number(p.price_100);
@@ -565,8 +567,7 @@ export default function HomePage({
                              fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>
                     {c}
                   </button>
-                );})}
-              </div>
+                );})}              </div>
 
               {/* O'lchamlar */}
               <Lbl>O'lchamlar (mm) — ixtiyoriy</Lbl>

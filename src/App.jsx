@@ -94,7 +94,7 @@ export default function App() {
   useEffect(() => {
     ping();
     const warmup  = [3000, 7000, 13000, 20000, 30000].map(d => setTimeout(ping, d));
-    const keepAlive = setInterval(ping, 4 * 60 * 1000); // 4 daqiqada 1 marta
+    const keepAlive = setInterval(ping, 4 * 60 * 1000);
     return () => { warmup.forEach(clearTimeout); clearInterval(keepAlive); };
   }, []);
 
@@ -128,7 +128,6 @@ export default function App() {
           localStorage.setItem("rm_user", JSON.stringify(data.user));
           setUser(data.user);
         } else if (getToken()) {
-          // Verify existing token silently
           try {
             const me = await authAPI.me();
             setUser(me);
@@ -138,7 +137,6 @@ export default function App() {
             setUser(null);
           }
         } else {
-          // Try Telegram initData auto-login (silent — guest if not registered)
           const initData = window.Telegram?.WebApp?.initData;
           if (initData) {
             try {
@@ -154,11 +152,16 @@ export default function App() {
     })();
   }, []);
 
-  // Real-time polling: 10s interval
+  // Real-time polling: 3s interval
   useEffect(() => {
     pollRef.current = setInterval(loadData, 3_000);
     return () => clearInterval(pollRef.current);
   }, []);
+
+  // Oddiy user profile sahifasiga kira olmasin
+  useEffect(() => {
+    if (loggedIn && !opUser && nav === "profile") setNav("home");
+  }, [loggedIn, opUser, nav]);
 
   // visibilitychange — tab qaytganda darhol yangilansin
   useEffect(() => {
@@ -199,7 +202,6 @@ export default function App() {
   const handleDeleteProduct = async (id) => {
     try {
       await productsAPI.remove(id);
-      // Mark deleted locally; ProfilePage filter will hide it
       setMyProducts(prev => prev.map(p => p.id === id ? { ...p, status: "deleted" } : p));
     } catch (e) {
       console.error("Delete failed:", e.message);
@@ -301,9 +303,6 @@ export default function App() {
           </button>
         </div>
       )}
-
-      {/* Oddiy user profile ga kirmasin */}
-      {loggedIn && !opUser && nav === "profile" && (() => { setNav("home"); return null; })()}
 
       {/* Guest: faqat home */}
       {!loggedIn && nav === "home" && (
