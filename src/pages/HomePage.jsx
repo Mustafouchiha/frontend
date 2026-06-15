@@ -168,6 +168,8 @@ export default function HomePage({
         dim_x: form.dim_x ? Number(form.dim_x) : null,
         dim_y: form.dim_y ? Number(form.dim_y) : null,
         dim_z: form.dim_z ? Number(form.dim_z) : null,
+        pkg_size: form.pkg_size || null,
+        pkg_qty: form.pkg_qty ? Number(form.pkg_qty) : null,
         mahalla: form.mahalla || "",
       });
       if (onProductAdded) onProductAdded(newProd);
@@ -442,6 +444,20 @@ export default function HomePage({
               </div>
             )}
 
+            {(selected.pkg_size || selected.pkg_qty) && (
+              <div style={{ display:"inline-flex", alignItems:"center", gap:4, marginBottom:9,
+                            marginLeft: showDims ? 6 : 0,
+                            background:"#FEF9C3", border:"1px solid #FDE68A",
+                            borderRadius:9, padding:"3px 9px" }}>
+                <span style={{ fontSize:12 }}>📦</span>
+                <span style={{ fontSize:11, fontWeight:700, color:"#A16207" }}>
+                  {selected.pkg_size && `Pachka: ${selected.pkg_size}`}
+                  {selected.pkg_size && selected.pkg_qty && " · "}
+                  {selected.pkg_qty && `${selected.pkg_qty} dona/pachka`}
+                </span>
+              </div>
+            )}
+
             {/* Narx darajalari */}
             <div style={{ background:C.bg, borderRadius:12, padding:"10px 12px", marginBottom:10,
                           border:`1px solid ${C.border}` }}>
@@ -598,6 +614,18 @@ export default function HomePage({
                 <div><Lbl>Z uzunlik</Lbl><TInput type="number" placeholder="3000" value={form.dim_z} onChange={f("dim_z")} /></div>
               </div>
 
+              <Lbl>Nona pachka (ixtiyoriy)</Lbl>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:11 }}>
+                <div>
+                  <div style={{ fontSize:9, color:C.textMuted, marginBottom:3 }}>Pachka o'lchami</div>
+                  <TInput placeholder="Masalan: 50x100x3000" value={form.pkg_size} onChange={f("pkg_size")} />
+                </div>
+                <div>
+                  <div style={{ fontSize:9, color:C.textMuted, marginBottom:3 }}>Pachkada nechta dona</div>
+                  <TInput type="number" min="1" placeholder="10" value={form.pkg_qty} onChange={f("pkg_qty")} />
+                </div>
+              </div>
+
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:4 }}>
                 <div><Lbl>Miqdori *</Lbl><TInput type="number" min="0" placeholder="100" value={form.qty} onChange={f("qty")} /></div>
                 <div>
@@ -706,6 +734,11 @@ export default function HomePage({
                   {(form.dim_x || form.dim_y) && (
                     <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700, marginTop:1 }}>
                       📐 {[form.dim_x,form.dim_y,form.dim_z].filter(Boolean).join("×")} mm
+                    </div>
+                  )}
+                  {(form.pkg_size || form.pkg_qty) && (
+                    <div style={{ fontSize:11, color:"#A16207", fontWeight:700, marginTop:1 }}>
+                      📦 {form.pkg_size && `Pachka: ${form.pkg_size}`}{form.pkg_size && form.pkg_qty && " · "}{form.pkg_qty && `${form.pkg_qty} dona/pachka`}
                     </div>
                   )}
                   <div style={{ fontSize:11, color:C.primaryDark, fontWeight:700, marginTop:1 }}>

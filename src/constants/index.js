@@ -81,6 +81,8 @@ export const EMPTY_FORM = {
   dim_x:     "",
   dim_y:     "",
   dim_z:     "",
+  pkg_size:  "",
+  pkg_qty:   "",
 };
 
 export const APP_NAME = "ReNarx";
