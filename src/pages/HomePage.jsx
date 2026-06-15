@@ -15,6 +15,8 @@ import {
   Ruler, TrendingDown,
 } from "lucide-react";
 
+const BOT_LINK = import.meta.env.VITE_TG_BOT_URL || "https://t.me/ReNarxbot";
+
 function priceTier(p, qty) {
   const n = Number(qty) || 1;
   if (n >= 100 && p.price_100) return Number(p.price_100);
